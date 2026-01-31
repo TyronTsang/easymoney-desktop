@@ -645,7 +645,7 @@ async def get_loan(loan_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Loan not found")
     
     customer = await db.customers.find_one({"id": loan["customer_id"]}, {"_id": 0})
-    creator = await db.users.find_one({"id": loan.get("created_by")}, {"full_name": 1})
+    creator = await db.users.find_one({"id": loan.get("created_by")}, {"full_name": 1, "_id": 0})
     payments = await db.payments.find({"loan_id": loan_id}, {"_id": 0}).to_list(100)
     can_view_full_id = user["role"] in [UserRole.MANAGER.value, UserRole.ADMIN.value]
     
@@ -654,7 +654,7 @@ async def get_loan(loan_id: str, user: dict = Depends(get_current_user)):
     for p in payments:
         paid_by_name = None
         if p.get("paid_by"):
-            payer = await db.users.find_one({"id": p["paid_by"]}, {"full_name": 1})
+            payer = await db.users.find_one({"id": p["paid_by"]}, {"full_name": 1, "_id": 0})
             paid_by_name = payer["full_name"] if payer else "Unknown"
         enriched_payments.append({**p, "paid_by_name": paid_by_name})
     
