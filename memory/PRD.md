@@ -56,6 +56,9 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - ✅ Windows Active Directory authentication (LDAP/NTLM)
 - ✅ AD configuration endpoints (GET/PUT/TEST)
 - ✅ Auto-create users from AD with default role/branch
+- ✅ Database backup to JSON with timestamps
+- ✅ Backup configuration and status endpoints
+- ✅ Restore from backup (customers, loans, payments)
 
 ### Frontend (React + Tailwind + Shadcn/UI)
 - ✅ Master password unlock screen (first-time setup + unlock)
@@ -68,8 +71,10 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - ✅ Payment marking with confirmation dialog
 - ✅ Fraud alerts page (quick-close, duplicates tabs)
 - ✅ Export page (all/customers/loans/payments)
-- ✅ Admin panel (users, settings, AD config, security)
+- ✅ Admin panel with 5 tabs (Users, Settings, Backup, AD, Security)
 - ✅ Active Directory configuration tab with test connection
+- ✅ Database backup tab with create backup button
+- ✅ Last backup info display (date, filename, size, records)
 - ✅ Audit logs viewer with detail modal
 - ✅ Dark theme with red accents and company logo
 - ✅ Role-based navigation and access control
