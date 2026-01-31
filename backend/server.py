@@ -386,16 +386,139 @@ async def verify_master_password(data: MasterPasswordVerify):
     
     return {"verified": True}
 
+# ==================== ACTIVE DIRECTORY AUTHENTICATION ====================
+async def authenticate_with_ad(username: str, password: str, ad_config: dict) -> Optional[dict]:
+    """
+    Authenticate user against Windows Active Directory.
+    Returns user info dict if successful, None if failed.
+    """
+    if not LDAP_AVAILABLE:
+        logging.error("LDAP library not available")
+        return None
+    
+    if not ad_config or not ad_config.get("enabled"):
+        return None
+    
+    server_url = ad_config.get("server_url")
+    domain = ad_config.get("domain")
+    base_dn = ad_config.get("base_dn")
+    
+    if not all([server_url, domain]):
+        logging.error("AD configuration incomplete")
+        return None
+    
+    try:
+        # Build the user DN for authentication
+        # Support formats: username, DOMAIN\username, username@domain.com
+        if '\\' not in username and '@' not in username:
+            user_dn = f"{domain}\\{username}"
+        else:
+            user_dn = username
+        
+        server = Server(server_url, get_info=ALL)
+        
+        # Try NTLM authentication (most common for Windows AD)
+        with Connection(server, user=user_dn, password=password, authentication=NTLM, raise_exceptions=True) as conn:
+            if conn.bound:
+                # Successfully authenticated, now get user info
+                search_filter = f"(sAMAccountName={username.split('\\')[-1].split('@')[0]})"
+                
+                if base_dn:
+                    conn.search(
+                        search_base=base_dn,
+                        search_filter=search_filter,
+                        search_scope=SUBTREE,
+                        attributes=['sAMAccountName', 'displayName', 'mail', 'givenName', 'sn', 'memberOf']
+                    )
+                    
+                    if conn.entries:
+                        entry = conn.entries[0]
+                        return {
+                            'username': str(entry.sAMAccountName) if entry.sAMAccountName else username,
+                            'full_name': str(entry.displayName) if entry.displayName else username,
+                            'email': str(entry.mail) if entry.mail else None,
+                            'groups': [str(g) for g in entry.memberOf] if entry.memberOf else []
+                        }
+                
+                # Fallback: Return basic info if search fails
+                return {
+                    'username': username.split('\\')[-1].split('@')[0],
+                    'full_name': username.split('\\')[-1].split('@')[0],
+                    'email': None,
+                    'groups': []
+                }
+        
+        return None
+    
+    except LDAPBindError as e:
+        logging.warning(f"AD bind failed for user {username}: {e}")
+        return None
+    except LDAPException as e:
+        logging.error(f"LDAP error during AD authentication: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error during AD authentication: {e}")
+        return None
+
 # ==================== AUTH ====================
 @api_router.post("/auth/login")
 async def login(data: UserLogin):
-    """User login"""
-    user = await db.users.find_one({"username": data.username}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    """User login - supports local and Active Directory authentication"""
     
-    if not bcrypt.checkpw(data.password.encode(), user["password_hash"].encode()):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    # Get AD configuration
+    ad_config = await db.settings.find_one({"key": "ad_config"})
+    ad_settings = ad_config.get("value", {}) if ad_config else {}
+    
+    user = None
+    ad_authenticated = False
+    
+    # Try AD authentication if enabled and requested
+    if data.auth_method == AuthMethod.ACTIVE_DIRECTORY or (ad_settings.get("enabled") and data.auth_method != AuthMethod.LOCAL):
+        ad_user_info = await authenticate_with_ad(data.username, data.password, ad_settings)
+        
+        if ad_user_info:
+            ad_authenticated = True
+            # Check if user exists in local database
+            user = await db.users.find_one({"username": ad_user_info['username']}, {"_id": 0})
+            
+            if not user:
+                # Auto-create user from AD
+                user = {
+                    "id": str(uuid.uuid4()),
+                    "username": ad_user_info['username'],
+                    "password_hash": "",  # No local password for AD users
+                    "full_name": ad_user_info['full_name'],
+                    "role": ad_settings.get("default_role", UserRole.EMPLOYEE.value),
+                    "branch": ad_settings.get("default_branch", "Head Office"),
+                    "is_active": True,
+                    "auth_method": AuthMethod.ACTIVE_DIRECTORY.value,
+                    "ad_groups": ad_user_info.get('groups', []),
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.users.insert_one(user)
+                await create_audit_log("user", user["id"], "ad_auto_create", user["id"], user["full_name"], after={"username": user["username"]})
+            else:
+                # Update AD info
+                await db.users.update_one(
+                    {"id": user["id"]},
+                    {"$set": {
+                        "full_name": ad_user_info['full_name'],
+                        "ad_groups": ad_user_info.get('groups', []),
+                        "last_ad_sync": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+    
+    # Fall back to local authentication if AD not used or failed
+    if not ad_authenticated:
+        user = await db.users.find_one({"username": data.username}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not user.get("password_hash"):
+            raise HTTPException(status_code=401, detail="This user can only authenticate via Active Directory")
+        
+        if not bcrypt.checkpw(data.password.encode(), user["password_hash"].encode()):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
     
     if not user.get("is_active"):
         raise HTTPException(status_code=401, detail="Account disabled")
@@ -407,7 +530,8 @@ async def login(data: UserLogin):
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
     }, JWT_SECRET, algorithm=JWT_ALGORITHM)
     
-    await create_audit_log("user", user["id"], "login", user["id"], user["full_name"])
+    await create_audit_log("user", user["id"], "login", user["id"], user["full_name"], 
+                           after={"auth_method": "ad" if ad_authenticated else "local"})
     
     return {
         "token": token,
@@ -417,7 +541,8 @@ async def login(data: UserLogin):
             "full_name": user["full_name"],
             "role": user["role"],
             "branch": user["branch"]
-        }
+        },
+        "auth_method": "active_directory" if ad_authenticated else "local"
     }
 
 @api_router.get("/auth/me")
