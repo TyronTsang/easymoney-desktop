@@ -532,25 +532,59 @@ class EasyMoneyLoansAPITester:
         return True
 
     def test_settings_management(self):
-        """Test settings management"""
+        """Test settings management with focus on export folder configuration"""
         print("\n⚙️ Testing Settings Management...")
         
-        # Get settings
+        # Get initial settings
         success, data = self.make_request('GET', 'settings')
         if success and isinstance(data, dict):
             self.log_result("Get Settings", True)
+            initial_settings = data.copy()
             
-            # Update settings
+            # Test export folder path configuration
             settings_update = {
-                "export_folder_path": "/test/path",
-                "branch_name": "Test Branch"
+                "export_folder_path": "/tmp/exports",
+                "branch_name": "Test Branch Updated"
             }
             
             success, update_data = self.make_request('PUT', 'settings', settings_update)
             if success:
-                self.log_result("Update Settings", True)
+                self.log_result("Update Settings (Export Path)", True)
+                
+                # Verify settings were actually updated
+                success, updated_data = self.make_request('GET', 'settings')
+                if success:
+                    if (updated_data.get('export_folder_path') == '/tmp/exports' and 
+                        updated_data.get('branch_name') == 'Test Branch Updated'):
+                        self.log_result("Settings Update Verification", True)
+                    else:
+                        self.log_result("Settings Update Verification", False, 
+                                      f"Settings not updated correctly: {updated_data}")
+                else:
+                    self.log_result("Settings Update Verification", False, "Could not fetch updated settings")
             else:
-                self.log_result("Update Settings", False, str(update_data))
+                self.log_result("Update Settings (Export Path)", False, str(update_data))
+                
+            # Test partial settings update
+            partial_update = {
+                "export_folder_path": "/tmp/exports/updated"
+            }
+            
+            success, update_data = self.make_request('PUT', 'settings', partial_update)
+            if success:
+                self.log_result("Partial Settings Update", True)
+                
+                # Verify only export_folder_path changed
+                success, final_data = self.make_request('GET', 'settings')
+                if success:
+                    if (final_data.get('export_folder_path') == '/tmp/exports/updated' and
+                        final_data.get('branch_name') == 'Test Branch Updated'):  # Should remain unchanged
+                        self.log_result("Partial Update Verification", True)
+                    else:
+                        self.log_result("Partial Update Verification", False, 
+                                      f"Partial update failed: {final_data}")
+            else:
+                self.log_result("Partial Settings Update", False, str(update_data))
         else:
             self.log_result("Get Settings", False, str(data))
 
