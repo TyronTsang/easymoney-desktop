@@ -370,7 +370,7 @@ export default function LoanList() {
 
       {/* New Loan Dialog */}
       <Dialog open={newLoanOpen} onOpenChange={setNewLoanOpen}>
-        <DialogContent className="max-w-lg bg-white">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-white">
           <DialogHeader>
             <DialogTitle className="text-xl font-heading">Create New Loan</DialogTitle>
             <DialogDescription>Enter customer and loan details</DialogDescription>
