@@ -148,10 +148,11 @@ class EasyMoneyLoansAPITester:
         print("\n👥 Testing Customer Management...")
         
         # Test valid SA ID (using Luhn algorithm valid ID)
+        timestamp = datetime.now().strftime("%H%M%S")
         test_customer = {
-            "client_name": "Test Customer",
+            "client_name": f"Test Customer {timestamp}",
             "id_number": "8001015009087",  # Valid SA ID
-            "mandate_id": "TEST001"
+            "mandate_id": f"TEST{timestamp}"
         }
         
         # Create customer
