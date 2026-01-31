@@ -1,148 +1,226 @@
 {
   "summary": {
-    "total_tests": 23,
-    "passed_tests": 20,
-    "failed_tests": 3,
-    "success_rate": 86.95652173913044
+    "total_tests": 36,
+    "passed_tests": 34,
+    "failed_tests": 2,
+    "success_rate": 94.44444444444444
   },
   "results": [
     {
       "test": "API Connectivity",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:15.506103"
+      "timestamp": "2026-01-31T14:03:13.659051"
     },
     {
       "test": "Master Password Status Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:15.953577"
+      "timestamp": "2026-01-31T14:03:14.109886"
     },
     {
       "test": "Master Password Already Set",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:15.953590"
+      "timestamp": "2026-01-31T14:03:14.109899"
     },
     {
       "test": "Master Password Verification",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:16.625514"
+      "timestamp": "2026-01-31T14:03:14.676642"
     },
     {
       "test": "Admin Login",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:17.194402"
+      "timestamp": "2026-01-31T14:03:15.355613"
     },
     {
       "test": "Get Current User",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:17.647002"
+      "timestamp": "2026-01-31T14:03:16.127857"
     },
     {
       "test": "Dashboard Stats Structure",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:17.995565"
+      "timestamp": "2026-01-31T14:03:16.788436"
     },
     {
       "test": "Create Customer",
-      "success": false,
-      "details": "{'status_code': 520, 'text': 'Internal Server Error'}",
-      "timestamp": "2026-01-31T14:02:18.349865"
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:17.239033"
     },
     {
-      "test": "Loan Creation",
-      "success": false,
-      "details": "No test customer available",
-      "timestamp": "2026-01-31T14:02:18.349883"
+      "test": "Admin ID Visibility",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:17.239047"
     },
     {
-      "test": "Payment Management",
+      "test": "SA ID Validation",
       "success": false,
-      "details": "No test loan available",
-      "timestamp": "2026-01-31T14:02:18.349890"
+      "details": "Invalid SA ID was accepted",
+      "timestamp": "2026-01-31T14:03:17.685766"
+    },
+    {
+      "test": "List Customers",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:18.137984"
+    },
+    {
+      "test": "Customer in List",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:18.138001"
+    },
+    {
+      "test": "Get Customer Details",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:18.604714"
+    },
+    {
+      "test": "Create Loan",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:19.289846"
+    },
+    {
+      "test": "List Loans",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:19.741953"
+    },
+    {
+      "test": "Loan Calculation",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:19.741974"
+    },
+    {
+      "test": "Get Loan Details",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:20.187450"
+    },
+    {
+      "test": "Payment Schedule Generation",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:20.187462"
+    },
+    {
+      "test": "Mark Payment as Paid",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:20.635864"
+    },
+    {
+      "test": "Payment Immutability",
+      "success": false,
+      "details": "Payment was marked paid twice",
+      "timestamp": "2026-01-31T14:03:21.090925"
+    },
+    {
+      "test": "Loan Balance Update",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:21.541790"
+    },
+    {
+      "test": "Complete Loan for Fraud Test",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:21.886126"
+    },
+    {
+      "test": "Quick-Close Detection",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T14:03:22.236904"
     },
     {
       "test": "List Users",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:18.795694"
+      "timestamp": "2026-01-31T14:03:23.006099"
     },
     {
       "test": "Admin User Exists",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:18.795710"
+      "timestamp": "2026-01-31T14:03:23.006115"
     },
     {
       "test": "Create User",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:19.793892"
+      "timestamp": "2026-01-31T14:03:23.676596"
     },
     {
       "test": "Toggle User Status",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:20.141624"
+      "timestamp": "2026-01-31T14:03:24.146026"
     },
     {
       "test": "Export All Data",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:20.644985"
+      "timestamp": "2026-01-31T14:03:24.500826"
     },
     {
       "test": "Export Customers",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:21.104498"
+      "timestamp": "2026-01-31T14:03:25.267343"
     },
     {
       "test": "Export Loans",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:21.455878"
+      "timestamp": "2026-01-31T14:03:25.617899"
     },
     {
       "test": "Export Payments",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:22.121516"
+      "timestamp": "2026-01-31T14:03:25.974221"
     },
     {
       "test": "List Audit Logs",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:22.480478"
+      "timestamp": "2026-01-31T14:03:26.419065"
     },
     {
       "test": "Audit Logs Generated",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:22.480492"
+      "timestamp": "2026-01-31T14:03:26.419077"
     },
     {
       "test": "Audit Log Integrity",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:22.831334"
+      "timestamp": "2026-01-31T14:03:27.083734"
     },
     {
       "test": "Get Settings",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:23.283731"
+      "timestamp": "2026-01-31T14:03:27.425317"
     },
     {
       "test": "Update Settings",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-31T14:02:24.050218"
+      "timestamp": "2026-01-31T14:03:28.187073"
     }
   ]
 }
