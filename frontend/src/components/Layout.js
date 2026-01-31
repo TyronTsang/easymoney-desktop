@@ -26,6 +26,8 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_moneyloan/artifacts/5g3xucf8_easy_money_loans_logo_enhanced_white%20%281%29.png";
+
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['employee', 'manager', 'admin'] },
   { path: '/customers', icon: Users, label: 'Customers', roles: ['employee', 'manager', 'admin'] },
@@ -62,11 +64,11 @@ export default function Layout({ children }) {
           {/* Logo area */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
             {!collapsed && (
-              <div className="flex items-center gap-1">
-                <span className="text-red-600 font-bold text-xs tracking-wide">EASY MONEY</span>
-                <span className="text-red-600 text-sm">💵💵</span>
-                <span className="text-red-600 font-bold text-xs tracking-wide">LOANS</span>
-              </div>
+              <img 
+                src={LOGO_URL} 
+                alt="Easy Money Loans" 
+                className="h-8 object-contain"
+              />
             )}
             {collapsed && (
               <div className="w-8 h-8 rounded-md bg-red-600 flex items-center justify-center mx-auto">

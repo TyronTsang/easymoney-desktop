@@ -8,6 +8,8 @@ import { Label } from '../components/ui/label';
 import { Lock, KeyRound, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_moneyloan/artifacts/5g3xucf8_easy_money_loans_logo_enhanced_white%20%281%29.png";
+
 export default function MasterPasswordScreen() {
   const { masterPasswordSet, setupMasterPassword, unlockApp } = useAuth();
   const [password, setPassword] = useState('');
@@ -109,10 +111,12 @@ export default function MasterPasswordScreen() {
           <Card className="shadow-2xl border-0">
             <CardHeader className="text-center space-y-4 pt-8">
               {/* Logo */}
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-red-600 font-bold text-sm tracking-wide">EASY MONEY</span>
-                <span className="text-red-600 text-lg">💵💵</span>
-                <span className="text-red-600 font-bold text-sm tracking-wide">LOANS</span>
+              <div className="flex items-center justify-center">
+                <img 
+                  src={LOGO_URL} 
+                  alt="Easy Money Loans" 
+                  className="h-12 object-contain"
+                />
               </div>
               
               <div>
