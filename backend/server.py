@@ -786,7 +786,7 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
         
         customers = await db.customers.find({"archived_at": None}, {"_id": 0}).to_list(10000)
         for row, c in enumerate(customers, 2):
-            creator = await db.users.find_one({"id": c.get("created_by")}, {"full_name": 1})
+            creator = await db.users.find_one({"id": c.get("created_by")}, {"full_name": 1, "_id": 0})
             ws.cell(row=row, column=1, value=c["id"]).border = border
             ws.cell(row=row, column=2, value=c["client_name"]).border = border
             # Format ID as text to prevent scientific notation
