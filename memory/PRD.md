@@ -87,12 +87,12 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - [x] Admin user management
 - [x] Audit integrity verification
 
-### P2 (Medium) - NOT STARTED
-- [ ] Electron packaging for Windows EXE
-- [ ] Windows AD/LDAP integration
-- [ ] SQLite local database (currently uses MongoDB)
-- [ ] Data encryption at rest with DPAPI
-- [ ] Export folder path configuration (saved but not used for file save)
+### P2 (Medium) - PARTIALLY DONE
+- [x] Electron packaging configuration (main.js, preload.js, database.js created)
+- [x] SQLite local database with full schema (electron/database.js)
+- [x] Export folder path configuration and file saving (/api/export with save_to_path)
+- [ ] Windows AD/LDAP integration (optional)
+- [ ] Data encryption at rest with DPAPI (master password derived key used)
 - [ ] End-of-day record locking after export
 
 ### P3 (Low/Nice-to-have)
