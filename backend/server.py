@@ -817,7 +817,7 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
         loans = await db.loans.find({"archived_at": None}, {"_id": 0}).to_list(10000)
         for row, loan in enumerate(loans, 2):
             customer = await db.customers.find_one({"id": loan["customer_id"]}, {"_id": 0})
-            creator = await db.users.find_one({"id": loan.get("created_by")}, {"full_name": 1})
+            creator = await db.users.find_one({"id": loan.get("created_by")}, {"full_name": 1, "_id": 0})
             
             plan_names = {1: "Monthly", 2: "Fortnightly", 4: "Weekly"}
             
