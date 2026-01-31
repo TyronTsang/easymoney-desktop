@@ -16,7 +16,7 @@ import {
 import { Calendar } from '../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { format } from 'date-fns';
-import { CreditCard, User, CalendarIcon, Calculator, ArrowRight, Check, ArrowLeft } from 'lucide-react';
+import { CreditCard, User, CalendarIcon, Calculator, ArrowRight, Check } from 'lucide-react';
 
 export default function CreateLoan() {
   const { api } = useAuth();
@@ -89,37 +89,29 @@ export default function CreateLoan() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/loans')}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">New Loan</h1>
-          <p className="text-gray-500 text-sm mt-1">Create a new loan in 3 simple steps</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-heading font-bold tracking-tight">New Loan</h1>
+        <p className="text-muted-foreground text-sm mt-1">Create a new loan in 3 simple steps</p>
       </div>
 
-      {/* Progress Steps */}
       <div className="flex items-center gap-2">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= s ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+              step >= s ? 'bg-red-500 text-white' : 'bg-secondary text-muted-foreground'
             }`}>
               {step > s ? <Check className="w-4 h-4" /> : s}
             </div>
-            {s < 3 && <div className={`w-16 h-0.5 ${step > s ? 'bg-red-600' : 'bg-gray-200'}`} />}
+            {s < 3 && <div className={`w-16 h-0.5 ${step > s ? 'bg-red-500' : 'bg-secondary'}`} />}
           </div>
         ))}
       </div>
 
-      {/* Step 1: Select Customer */}
       {step === 1 && (
-        <Card className="border-gray-200 shadow-sm" data-testid="step-1-card">
+        <Card className="border-border" data-testid="step-1-card">
           <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2 text-gray-900">
-              <User className="w-5 h-5 text-red-600" strokeWidth={1.5} />
+            <CardTitle className="font-heading flex items-center gap-2">
+              <User className="w-5 h-5 text-red-500" strokeWidth={1.5} />
               Step 1: Select Customer
             </CardTitle>
             <CardDescription>Choose an existing customer for this loan</CardDescription>
@@ -128,7 +120,7 @@ export default function CreateLoan() {
             <div className="space-y-2">
               <Label>Customer</Label>
               <Select value={formData.customer_id} onValueChange={(v) => setFormData({...formData, customer_id: v})}>
-                <SelectTrigger className="bg-gray-50 border-gray-200" data-testid="customer-select">
+                <SelectTrigger className="bg-secondary" data-testid="customer-select">
                   <SelectValue placeholder="Select a customer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -142,11 +134,11 @@ export default function CreateLoan() {
             </div>
 
             {selectedCustomer && (
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-                <p className="text-sm text-gray-500 mb-2">Selected Customer</p>
-                <p className="font-medium text-gray-900">{selectedCustomer.client_name}</p>
-                <p className="text-sm font-mono text-gray-600">{selectedCustomer.id_number_masked}</p>
-                <p className="text-sm text-gray-500">Mandate: {selectedCustomer.mandate_id}</p>
+              <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                <p className="text-sm text-muted-foreground mb-2">Selected Customer</p>
+                <p className="font-medium">{selectedCustomer.client_name}</p>
+                <p className="text-sm font-mono text-muted-foreground">{selectedCustomer.id_number_masked}</p>
+                <p className="text-sm text-muted-foreground">Mandate: {selectedCustomer.mandate_id}</p>
               </div>
             )}
 
@@ -154,7 +146,7 @@ export default function CreateLoan() {
               <Button 
                 onClick={() => setStep(2)} 
                 disabled={!formData.customer_id}
-                className="bg-red-600 hover:bg-red-700 gap-2"
+                className="gap-2 bg-red-600 hover:bg-red-700"
                 data-testid="step-1-next-btn"
               >
                 Next <ArrowRight className="w-4 h-4" />
@@ -164,12 +156,11 @@ export default function CreateLoan() {
         </Card>
       )}
 
-      {/* Step 2: Loan Details */}
       {step === 2 && (
-        <Card className="border-gray-200 shadow-sm" data-testid="step-2-card">
+        <Card className="border-border" data-testid="step-2-card">
           <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2 text-gray-900">
-              <CreditCard className="w-5 h-5 text-red-600" strokeWidth={1.5} />
+            <CardTitle className="font-heading flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-red-500" strokeWidth={1.5} />
               Step 2: Loan Details
             </CardTitle>
             <CardDescription>Enter the loan amount and repayment plan</CardDescription>
@@ -184,7 +175,7 @@ export default function CreateLoan() {
                   placeholder="e.g., 1000"
                   value={formData.principal_amount}
                   onChange={(e) => setFormData({...formData, principal_amount: e.target.value})}
-                  className="bg-gray-50 border-gray-200 font-mono"
+                  className="bg-secondary font-mono"
                   min="1"
                   data-testid="principal-input"
                 />
@@ -192,7 +183,7 @@ export default function CreateLoan() {
               <div className="space-y-2">
                 <Label>Repayment Plan</Label>
                 <Select value={formData.repayment_plan_code} onValueChange={(v) => setFormData({...formData, repayment_plan_code: v})}>
-                  <SelectTrigger className="bg-gray-50 border-gray-200" data-testid="plan-select">
+                  <SelectTrigger className="bg-secondary" data-testid="plan-select">
                     <SelectValue placeholder="Select plan" />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,7 +199,7 @@ export default function CreateLoan() {
               <Label>Loan Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-gray-50 border-gray-200" data-testid="date-picker-btn">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-secondary" data-testid="date-picker-btn">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {format(formData.loan_date, 'PPP')}
                   </Button>
@@ -225,11 +216,11 @@ export default function CreateLoan() {
             </div>
 
             <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep(1)} data-testid="step-2-back-btn">Back</Button>
+              <Button variant="secondary" onClick={() => setStep(1)} data-testid="step-2-back-btn">Back</Button>
               <Button 
                 onClick={() => setStep(3)} 
                 disabled={!formData.principal_amount || !formData.repayment_plan_code}
-                className="bg-red-600 hover:bg-red-700 gap-2"
+                className="gap-2 bg-red-600 hover:bg-red-700"
                 data-testid="step-2-next-btn"
               >
                 Next <ArrowRight className="w-4 h-4" />
@@ -239,56 +230,53 @@ export default function CreateLoan() {
         </Card>
       )}
 
-      {/* Step 3: Review & Confirm */}
       {step === 3 && (
-        <Card className="border-gray-200 shadow-sm" data-testid="step-3-card">
+        <Card className="border-border" data-testid="step-3-card">
           <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2 text-gray-900">
-              <Calculator className="w-5 h-5 text-red-600" strokeWidth={1.5} />
+            <CardTitle className="font-heading flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-red-500" strokeWidth={1.5} />
               Step 3: Review & Confirm
             </CardTitle>
             <CardDescription>Verify the loan details before creating</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Customer Summary */}
-            <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-              <p className="text-sm text-gray-500 mb-2">Customer</p>
-              <p className="font-medium text-gray-900">{selectedCustomer?.client_name}</p>
-              <p className="text-sm font-mono text-gray-600">{selectedCustomer?.id_number_masked}</p>
+            <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+              <p className="text-sm text-muted-foreground mb-2">Customer</p>
+              <p className="font-medium">{selectedCustomer?.client_name}</p>
+              <p className="text-sm font-mono text-muted-foreground">{selectedCustomer?.id_number_masked}</p>
             </div>
 
-            {/* Loan Calculation */}
             {calculation && (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-100">
-                <p className="text-sm text-red-600 mb-3 font-medium">Loan Calculation</p>
+              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-sm text-red-500 mb-3 font-medium">Loan Calculation</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Principal Amount</span>
-                    <span className="font-mono text-gray-900">R{calculation.principal.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Principal Amount</span>
+                    <span className="font-mono">R{calculation.principal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Interest (40%)</span>
-                    <span className="font-mono text-gray-900">R{calculation.interest.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Interest (40%)</span>
+                    <span className="font-mono">R{calculation.interest.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Service Fee</span>
-                    <span className="font-mono text-gray-900">R{calculation.serviceFee.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Service Fee</span>
+                    <span className="font-mono">R{calculation.serviceFee.toFixed(2)}</span>
                   </div>
-                  <div className="border-t border-red-200 pt-2 mt-2">
+                  <div className="border-t border-red-500/20 pt-2 mt-2">
                     <div className="flex justify-between font-medium">
-                      <span className="text-gray-900">Total Repayable</span>
-                      <span className="font-mono text-red-600">R{calculation.total.toFixed(2)}</span>
+                      <span>Total Repayable</span>
+                      <span className="font-mono text-red-500">R{calculation.total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-muted-foreground">
                     <span>Repayment Plan</span>
                     <span>{planNames[formData.repayment_plan_code]}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Per Installment</span>
-                    <span className="font-mono font-medium text-gray-900">R{calculation.installmentAmount.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Per Installment</span>
+                    <span className="font-mono font-medium">R{calculation.installmentAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-muted-foreground">
                     <span>Loan Date</span>
                     <span>{format(formData.loan_date, 'PPP')}</span>
                   </div>
@@ -297,11 +285,11 @@ export default function CreateLoan() {
             )}
 
             <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep(2)} data-testid="step-3-back-btn">Back</Button>
+              <Button variant="secondary" onClick={() => setStep(2)} data-testid="step-3-back-btn">Back</Button>
               <Button 
                 onClick={handleSubmit} 
                 disabled={loading}
-                className="bg-red-600 hover:bg-red-700 gap-2"
+                className="gap-2 bg-red-600 hover:bg-red-700 glow-primary"
                 data-testid="create-loan-btn"
               >
                 {loading ? 'Creating...' : 'Create Loan'}
