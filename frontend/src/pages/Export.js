@@ -141,14 +141,46 @@ export default function Export() {
             </ul>
           </div>
 
+          {/* Save to configured folder option */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FolderOpen className="w-5 h-5 text-emerald-500" />
+                <div>
+                  <p className="font-medium">Save to Dropbox Folder</p>
+                  <p className="text-xs text-muted-foreground">
+                    {settings.export_folder_path 
+                      ? `Save directly to: ${settings.export_folder_path}` 
+                      : 'No export folder configured'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={saveToPath}
+                onCheckedChange={setSaveToPath}
+                disabled={!settings.export_folder_path}
+                data-testid="save-to-path-switch"
+              />
+            </div>
+          </div>
+
+          {saveToPath && !settings.export_folder_path && (
+            <Alert className="border-amber-500/20 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-sm text-amber-200/80">
+                Export folder not configured. Please configure in Admin Panel → Settings.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button 
             onClick={handleExport} 
-            disabled={loading} 
+            disabled={loading || (saveToPath && !settings.export_folder_path)} 
             className="w-full gap-2"
             data-testid="export-btn"
           >
             <Download className="w-4 h-4" />
-            {loading ? 'Exporting...' : 'Export to Excel'}
+            {loading ? 'Exporting...' : saveToPath ? 'Save to Folder' : 'Download Export'}
           </Button>
         </CardContent>
       </Card>
