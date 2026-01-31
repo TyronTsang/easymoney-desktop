@@ -876,17 +876,41 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
     if "Sheet" in wb.sheetnames and len(wb.sheetnames) > 1:
         del wb["Sheet"]
     
-    # Save to bytes
+    # Generate filename
+    branch = user.get("branch", "Unknown").replace(" ", "_")
+    filename = f"Loans_{datetime.now().strftime('%Y-%m-%d')}_{branch}.xlsx"
+    
+    # Check if we should save to configured export folder
+    if data.save_to_path:
+        settings = await db.settings.find_one({"key": "export_folder_path"})
+        if settings and settings.get("value"):
+            export_path = settings["value"]
+            # Ensure directory exists
+            import os
+            if os.path.isdir(export_path):
+                full_path = os.path.join(export_path, filename)
+                wb.save(full_path)
+                
+                await create_audit_log("export", "system", "export_data", user["id"], user["full_name"],
+                                       after={"export_type": data.export_type, "saved_to": full_path})
+                
+                return {
+                    "filename": filename,
+                    "saved_to_path": full_path,
+                    "message": f"Export saved to {full_path}"
+                }
+            else:
+                raise HTTPException(status_code=400, detail=f"Export folder does not exist: {export_path}")
+        else:
+            raise HTTPException(status_code=400, detail="Export folder path not configured. Please configure in Admin Settings.")
+    
+    # Save to bytes for download
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
     
     await create_audit_log("export", "system", "export_data", user["id"], user["full_name"],
                            after={"export_type": data.export_type})
-    
-    # Generate filename
-    branch = user.get("branch", "Unknown").replace(" ", "_")
-    filename = f"Loans_{datetime.now().strftime('%Y-%m-%d')}_{branch}.xlsx"
     
     return {
         "filename": filename,
