@@ -517,7 +517,7 @@ async def get_customer(customer_id: str, user: dict = Depends(get_current_user))
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
-    creator = await db.users.find_one({"id": customer.get("created_by")}, {"full_name": 1})
+    creator = await db.users.find_one({"id": customer.get("created_by")}, {"full_name": 1, "_id": 0})
     can_view_full_id = user["role"] in [UserRole.MANAGER.value, UserRole.ADMIN.value]
     
     return {
