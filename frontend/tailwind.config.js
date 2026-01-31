@@ -45,12 +45,6 @@ module.exports = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        // Custom brand colors
-        brand: {
-          red: '#dc2626',
-          darkRed: '#b91c1c',
-          yellow: '#f59e0b',
-        }
       },
       borderRadius: {
         lg: "var(--radius)",
