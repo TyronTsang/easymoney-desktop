@@ -558,7 +558,7 @@ async def list_loans(
         for p in payments:
             paid_by_name = None
             if p.get("paid_by"):
-                payer = await db.users.find_one({"id": p["paid_by"]}, {"full_name": 1})
+                payer = await db.users.find_one({"id": p["paid_by"]}, {"full_name": 1, "_id": 0})
                 paid_by_name = payer["full_name"] if payer else "Unknown"
             enriched_payments.append({**p, "paid_by_name": paid_by_name})
         
