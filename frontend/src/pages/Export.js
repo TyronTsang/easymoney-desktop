@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -11,38 +12,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { Download, FileSpreadsheet, Users, CreditCard, Banknote } from 'lucide-react';
+import { Download, FileSpreadsheet, Users, CreditCard, Banknote, FolderOpen, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '../components/ui/alert';
 
 export default function Export() {
   const { api, user } = useAuth();
   const [exportType, setExportType] = useState('all');
+  const [saveToPath, setSaveToPath] = useState(false);
+  const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api().get('/settings');
+        setSettings(res.data);
+      } catch (err) {
+        console.error('Failed to load settings');
+      }
+    };
+    fetchSettings();
+  }, [api]);
 
   const handleExport = async () => {
     setLoading(true);
     try {
-      const res = await api().post('/export', { export_type: exportType });
+      const res = await api().post('/export', { export_type: exportType, save_to_path: saveToPath });
       
-      // Convert base64 to blob and download
-      const byteCharacters = atob(res.data.data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      if (res.data.saved_to_path) {
+        // File was saved to configured path
+        toast.success(res.data.message);
+      } else {
+        // Convert base64 to blob and download
+        const byteCharacters = atob(res.data.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: res.data.content_type });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = res.data.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success(`Export downloaded as ${res.data.filename}`);
       }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: res.data.content_type });
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = res.data.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success(`Export saved as ${res.data.filename}`);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Export failed');
     } finally {
