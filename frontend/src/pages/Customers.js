@@ -79,19 +79,19 @@ export default function Customers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold tracking-tight">Customers</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="text-2xl font-heading font-bold text-gray-900">Customers</h1>
+          <p className="text-gray-500 text-sm mt-1">
             Manage customer records
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2" data-testid="add-customer-btn">
+            <Button className="bg-red-600 hover:bg-red-700 gap-2" data-testid="add-customer-btn">
               <Plus className="w-4 h-4" />
               Add Customer
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card border-border">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle className="font-heading">New Customer</DialogTitle>
               <DialogDescription>
@@ -106,7 +106,7 @@ export default function Customers() {
                   placeholder="Full name"
                   value={formData.client_name}
                   onChange={(e) => setFormData({...formData, client_name: e.target.value})}
-                  className="bg-secondary"
+                  className="bg-gray-50 border-gray-200"
                   data-testid="customer-name-input"
                   required
                 />
@@ -118,12 +118,12 @@ export default function Customers() {
                   placeholder="13-digit SA ID"
                   value={formData.id_number}
                   onChange={(e) => setFormData({...formData, id_number: e.target.value.replace(/\D/g, '').slice(0, 13)})}
-                  className="bg-secondary font-mono"
+                  className="bg-gray-50 border-gray-200 font-mono"
                   maxLength={13}
                   data-testid="customer-id-input"
                   required
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   {formData.id_number.length}/13 digits
                 </p>
               </div>
@@ -134,16 +134,16 @@ export default function Customers() {
                   placeholder="Bank mandate reference"
                   value={formData.mandate_id}
                   onChange={(e) => setFormData({...formData, mandate_id: e.target.value})}
-                  className="bg-secondary"
+                  className="bg-gray-50 border-gray-200"
                   data-testid="customer-mandate-input"
                   required
                 />
               </div>
               <div className="flex gap-2 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)} className="flex-1">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={formLoading} className="flex-1" data-testid="create-customer-btn">
+                <Button type="submit" disabled={formLoading} className="flex-1 bg-red-600 hover:bg-red-700" data-testid="create-customer-btn">
                   {formLoading ? 'Creating...' : 'Create Customer'}
                 </Button>
               </div>
@@ -154,67 +154,67 @@ export default function Customers() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <Input
           placeholder="Search by name or mandate ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 bg-secondary"
+          className="pl-10 bg-white border-gray-200"
           data-testid="customer-search-input"
         />
       </div>
 
       {/* Table */}
-      <Card className="border-border">
+      <Card className="border-gray-200 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-heading flex items-center gap-2">
-            <Users className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
+          <CardTitle className="text-lg font-heading flex items-center gap-2 text-gray-900">
+            <Users className="w-5 h-5 text-red-600" strokeWidth={1.5} />
             Customer List
-            <span className="text-sm font-normal text-muted-foreground ml-2">
+            <span className="text-sm font-normal text-gray-500 ml-2">
               ({filteredCustomers.length} records)
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border border-border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead>Client Name</TableHead>
-                  <TableHead>
+                <TableRow className="bg-gray-50 hover:bg-gray-50">
+                  <TableHead className="font-semibold text-gray-700">Client Name</TableHead>
+                  <TableHead className="font-semibold text-gray-700">
                     <div className="flex items-center gap-1">
                       SA ID Number
                       {canViewFullId ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                     </div>
                   </TableHead>
-                  <TableHead>Mandate ID</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Created At</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Mandate ID</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Created By</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Created At</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-12 text-gray-500">
                       Loading customers...
                     </TableCell>
                   </TableRow>
                 ) : filteredCustomers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-12 text-gray-500">
                       No customers found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id} data-testid={`customer-row-${customer.id}`}>
-                      <TableCell className="font-medium">{customer.client_name}</TableCell>
-                      <TableCell className="font-mono text-sm">
+                    <TableRow key={customer.id} className="table-row-hover" data-testid={`customer-row-${customer.id}`}>
+                      <TableCell className="font-medium text-gray-900">{customer.client_name}</TableCell>
+                      <TableCell className="font-mono text-sm text-gray-600">
                         {canViewFullId ? customer.id_number : customer.id_number_masked}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{customer.mandate_id}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{customer.created_by_name}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="font-mono text-sm text-gray-600">{customer.mandate_id}</TableCell>
+                      <TableCell className="text-gray-500 text-sm">{customer.created_by_name}</TableCell>
+                      <TableCell className="text-gray-500 text-sm">
                         {new Date(customer.created_at).toLocaleDateString('en-ZA')}
                       </TableCell>
                     </TableRow>
