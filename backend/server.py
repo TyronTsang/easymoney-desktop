@@ -503,8 +503,11 @@ async def create_customer(data: CustomerCreate, user: dict = Depends(get_current
     creator = await db.users.find_one({"id": user["id"]}, {"full_name": 1, "_id": 0})
     can_view_full_id = user["role"] in [UserRole.MANAGER.value, UserRole.ADMIN.value]
     
+    # Remove MongoDB _id from customer dict before returning
+    customer_response = {k: v for k, v in customer.items() if k != "_id"}
+    
     return {
-        **customer,
+        **customer_response,
         "id_number": customer["id_number"] if can_view_full_id else mask_id_number(customer["id_number"]),
         "id_number_masked": mask_id_number(customer["id_number"]),
         "created_by_name": creator["full_name"] if creator else "Unknown"
