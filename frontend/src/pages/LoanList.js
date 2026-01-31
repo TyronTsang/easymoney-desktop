@@ -149,10 +149,20 @@ export default function LoanList() {
       setUseExistingCustomer(false);
       fetchData();
     } catch (err) {
-      const errorMsg = Array.isArray(err.response?.data?.detail) 
-        ? err.response.data.detail[0]?.msg || 'Failed to create loan'
-        : err.response?.data?.detail || 'Failed to create loan';
-      toast.error(errorMsg);
+      let errorMsg = 'Failed to create loan';
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          errorMsg = detail[0]?.msg || detail[0]?.message || errorMsg;
+        } else if (typeof detail === 'string') {
+          errorMsg = detail;
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      toast.error(String(errorMsg));
     } finally {
       setFormLoading(false);
     }
