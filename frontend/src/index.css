@@ -13,26 +13,26 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 7%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 160 84% 39%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+    --primary: 0 72% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 17%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 5% 17%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 239 84% 67%;
-    --accent-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 72% 51%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5% 17%;
-    --input: 240 5% 17%;
-    --ring: 160 84% 39%;
-    --radius: 0.375rem;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 72% 51%;
+    --radius: 0.5rem;
   }
 }
 
@@ -61,51 +61,47 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: #f1f1f1;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #ccc;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #aaa;
 }
 
 /* Status badges */
 .badge-success {
-  @apply bg-emerald-500/15 text-emerald-500 border border-emerald-500/20;
+  @apply bg-emerald-100 text-emerald-700 border border-emerald-200;
 }
 
 .badge-warning {
-  @apply bg-amber-500/15 text-amber-500 border border-amber-500/20;
+  @apply bg-amber-100 text-amber-700 border border-amber-200;
 }
 
 .badge-error {
-  @apply bg-red-500/15 text-red-500 border border-red-500/20;
+  @apply bg-red-100 text-red-700 border border-red-200;
 }
 
 .badge-neutral {
-  @apply bg-zinc-500/15 text-zinc-400 border border-zinc-500/20;
+  @apply bg-gray-100 text-gray-700 border border-gray-200;
 }
 
 /* Fraud alert row highlight */
 .fraud-quick-close {
-  @apply bg-amber-500/10 border-l-2 border-l-amber-500;
+  @apply bg-amber-50 border-l-4 border-l-amber-500;
 }
 
 .fraud-duplicate {
-  @apply bg-purple-500/10 border-l-2 border-l-purple-500;
+  @apply bg-purple-50 border-l-4 border-l-purple-500;
 }
 
-/* Glow effects */
-.glow-primary {
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-}
-
-.glow-destructive {
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+/* Red gradient background for login */
+.bg-red-gradient {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
 }
 
 /* Animation for fraud shake */
@@ -124,17 +120,25 @@
   @apply animate-in fade-in slide-in-from-bottom-4 duration-300;
 }
 
-/* Desktop app feel - remove default browser styles */
+/* Enable text selection */
 body {
-  user-select: none;
-  overflow: hidden;
+  user-select: auto;
 }
 
-input, textarea, [contenteditable] {
-  user-select: text;
+/* Payment toggle styling */
+.payment-toggle {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors;
 }
 
-/* Prevent text selection on UI elements */
-button, a, label, .no-select {
-  user-select: none;
+.payment-toggle[data-state="checked"] {
+  @apply bg-emerald-500;
+}
+
+.payment-toggle[data-state="unchecked"] {
+  @apply bg-gray-300;
+}
+
+/* Table row hover */
+.table-row-hover:hover {
+  @apply bg-gray-50;
 }
