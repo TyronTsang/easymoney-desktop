@@ -684,13 +684,13 @@ async def get_customer(customer_id: str, user: dict = Depends(get_current_user))
 # ==================== LOANS ====================
 @api_router.get("/loans")
 async def list_loans(
-    status: Optional[str] = None,
+    loan_status: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
     """List all loans with fraud detection"""
     query = {"archived_at": None}
-    if status:
-        query["status"] = status
+    if loan_status:
+        query["status"] = loan_status
     
     loans = await db.loans.find(query, {"_id": 0}).to_list(1000)
     can_view_full_id = user["role"] in [UserRole.MANAGER.value, UserRole.ADMIN.value]
