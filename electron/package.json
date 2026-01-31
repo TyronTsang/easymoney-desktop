@@ -1,0 +1,51 @@
+{
+  "name": "easymoney-desktop",
+  "version": "1.0.0",
+  "description": "EasyMoneyLoans Secure Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:portable": "electron-builder --win portable"
+  },
+  "author": "EasyMoneyLoans",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "electron-store": "^8.1.0"
+  },
+  "build": {
+    "appId": "com.easymoney.desktop",
+    "productName": "EasyMoneyLoans",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "database.js",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/build",
+        "to": "app"
+      }
+    ]
+  }
+}
