@@ -550,7 +550,7 @@ async def list_loans(
     result = []
     for loan in loans:
         customer = await db.customers.find_one({"id": loan["customer_id"]}, {"_id": 0})
-        creator = await db.users.find_one({"id": loan.get("created_by")}, {"full_name": 1})
+        creator = await db.users.find_one({"id": loan.get("created_by")}, {"full_name": 1, "_id": 0})
         payments = await db.payments.find({"loan_id": loan["id"]}, {"_id": 0}).to_list(100)
         
         # Enrich payments with paid_by_name
