@@ -156,7 +156,9 @@ export default function LoanList() {
   };
 
   const handleMarkPayment = async (e, loanId, installmentNumber, currentlyPaid) => {
-    e.stopPropagation();
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
     if (currentlyPaid) {
       toast.error('Payments cannot be unmarked');
       return;
