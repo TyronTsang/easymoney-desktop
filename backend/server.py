@@ -462,7 +462,7 @@ async def list_customers(user: dict = Depends(get_current_user)):
     
     result = []
     for c in customers:
-        creator = await db.users.find_one({"id": c.get("created_by")}, {"full_name": 1})
+        creator = await db.users.find_one({"id": c.get("created_by")}, {"full_name": 1, "_id": 0})
         result.append({
             **c,
             "id_number": c["id_number"] if can_view_full_id else mask_id_number(c["id_number"]),
