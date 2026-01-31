@@ -197,6 +197,7 @@ class ExportRequest(BaseModel):
     export_type: str  # 'customers', 'loans', 'payments', 'all'
     date_from: Optional[str] = None
     date_to: Optional[str] = None
+    save_to_path: bool = False  # If true, save to configured export folder
 
 class ArchiveRequest(BaseModel):
     entity_type: str  # 'customer', 'loan'
