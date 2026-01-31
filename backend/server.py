@@ -1161,6 +1161,92 @@ async def update_settings(data: SettingsUpdate, user: dict = Depends(require_rol
     
     return {"message": "Settings updated successfully"}
 
+# ==================== ACTIVE DIRECTORY CONFIGURATION ====================
+@api_router.get("/settings/ad-config")
+async def get_ad_config(user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Get Active Directory configuration (Admin only)"""
+    config = await db.settings.find_one({"key": "ad_config"})
+    if config:
+        # Mask sensitive data
+        value = config.get("value", {})
+        return {
+            "enabled": value.get("enabled", False),
+            "server_url": value.get("server_url", ""),
+            "domain": value.get("domain", ""),
+            "base_dn": value.get("base_dn", ""),
+            "default_role": value.get("default_role", UserRole.EMPLOYEE.value),
+            "default_branch": value.get("default_branch", "Head Office"),
+            "ldap_available": LDAP_AVAILABLE
+        }
+    return {
+        "enabled": False,
+        "server_url": "",
+        "domain": "",
+        "base_dn": "",
+        "default_role": UserRole.EMPLOYEE.value,
+        "default_branch": "Head Office",
+        "ldap_available": LDAP_AVAILABLE
+    }
+
+@api_router.put("/settings/ad-config")
+async def update_ad_config(data: ADConfigUpdate, user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Update Active Directory configuration (Admin only)"""
+    if not LDAP_AVAILABLE:
+        raise HTTPException(status_code=400, detail="LDAP library not available - install ldap3 package")
+    
+    config_value = {
+        "enabled": data.enabled,
+        "server_url": data.server_url,
+        "domain": data.domain,
+        "base_dn": data.base_dn,
+        "default_role": data.default_role.value if data.default_role else UserRole.EMPLOYEE.value,
+        "default_branch": data.default_branch or "Head Office"
+    }
+    
+    await db.settings.update_one(
+        {"key": "ad_config"},
+        {"$set": {"key": "ad_config", "value": config_value, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    await create_audit_log("settings", "ad_config", "update", user["id"], user["full_name"], 
+                           after={"enabled": data.enabled, "server_url": data.server_url})
+    
+    return {"message": "Active Directory configuration updated successfully"}
+
+@api_router.post("/settings/ad-config/test")
+async def test_ad_connection(data: ADConfigUpdate, user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Test Active Directory connection (Admin only)"""
+    if not LDAP_AVAILABLE:
+        raise HTTPException(status_code=400, detail="LDAP library not available")
+    
+    if not data.server_url or not data.domain:
+        raise HTTPException(status_code=400, detail="Server URL and domain are required")
+    
+    try:
+        server = Server(data.server_url, get_info=ALL, connect_timeout=10)
+        conn = Connection(server, auto_bind=False)
+        conn.open()
+        
+        server_info = {
+            "server_type": str(conn.server.info.vendor_name) if conn.server.info else "Unknown",
+            "naming_contexts": list(conn.server.info.naming_contexts) if conn.server.info and conn.server.info.naming_contexts else []
+        }
+        
+        conn.unbind()
+        
+        return {
+            "success": True,
+            "message": "Successfully connected to Active Directory server",
+            "server_info": server_info
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Connection failed: {str(e)}",
+            "server_info": None
+        }
+
 # ==================== DASHBOARD STATS ====================
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(user: dict = Depends(get_current_user)):
