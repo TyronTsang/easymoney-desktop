@@ -1298,6 +1298,249 @@ async def get_dashboard_stats(user: dict = Depends(get_current_user)):
         "duplicate_customer_alerts": len(duplicate_customers)
     }
 
+# ==================== DATABASE BACKUP ====================
+class BackupRequest(BaseModel):
+    backup_path: Optional[str] = None  # If not provided, uses configured path
+
+class BackupResponse(BaseModel):
+    success: bool
+    message: str
+    filename: Optional[str] = None
+    filepath: Optional[str] = None
+    backup_size: Optional[str] = None
+    records_count: Optional[dict] = None
+
+@api_router.get("/backup/status")
+async def get_backup_status(user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Get backup configuration and last backup info"""
+    backup_settings = await db.settings.find_one({"key": "backup_config"})
+    last_backup = await db.settings.find_one({"key": "last_backup"})
+    
+    return {
+        "backup_folder_path": backup_settings.get("value", {}).get("folder_path", "") if backup_settings else "",
+        "auto_backup_enabled": backup_settings.get("value", {}).get("auto_backup", False) if backup_settings else False,
+        "last_backup": last_backup.get("value", {}) if last_backup else None
+    }
+
+@api_router.put("/backup/config")
+async def update_backup_config(
+    folder_path: str = "",
+    auto_backup: bool = False,
+    user: dict = Depends(require_role(UserRole.ADMIN))
+):
+    """Update backup configuration"""
+    config = {
+        "folder_path": folder_path,
+        "auto_backup": auto_backup
+    }
+    
+    await db.settings.update_one(
+        {"key": "backup_config"},
+        {"$set": {"key": "backup_config", "value": config, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    await create_audit_log("settings", "backup_config", "update", user["id"], user["full_name"], after=config)
+    
+    return {"message": "Backup configuration updated successfully"}
+
+@api_router.post("/backup/create", response_model=BackupResponse)
+async def create_backup(
+    data: BackupRequest = None,
+    user: dict = Depends(require_role(UserRole.ADMIN))
+):
+    """Create a full database backup as JSON"""
+    import os
+    
+    # Get backup path
+    backup_path = None
+    if data and data.backup_path:
+        backup_path = data.backup_path
+    else:
+        backup_settings = await db.settings.find_one({"key": "backup_config"})
+        if backup_settings and backup_settings.get("value", {}).get("folder_path"):
+            backup_path = backup_settings["value"]["folder_path"]
+    
+    if not backup_path:
+        raise HTTPException(status_code=400, detail="No backup path configured. Set path in Admin Panel → Backup Settings")
+    
+    # Verify path exists (or can be created)
+    try:
+        os.makedirs(backup_path, exist_ok=True)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Cannot access backup folder: {str(e)}")
+    
+    # Collect all data
+    try:
+        backup_data = {
+            "backup_info": {
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": user["full_name"],
+                "created_by_id": user["id"],
+                "app_version": "1.0.0"
+            },
+            "users": [],
+            "customers": [],
+            "loans": [],
+            "payments": [],
+            "audit_logs": [],
+            "settings": []
+        }
+        
+        # Export users (without password hashes for security)
+        users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(10000)
+        backup_data["users"] = users
+        
+        # Export customers
+        customers = await db.customers.find({}, {"_id": 0}).to_list(100000)
+        backup_data["customers"] = customers
+        
+        # Export loans
+        loans = await db.loans.find({}, {"_id": 0}).to_list(100000)
+        backup_data["loans"] = loans
+        
+        # Export payments
+        payments = await db.payments.find({}, {"_id": 0}).to_list(500000)
+        backup_data["payments"] = payments
+        
+        # Export audit logs
+        audit_logs = await db.audit_logs.find({}, {"_id": 0}).to_list(100000)
+        backup_data["audit_logs"] = audit_logs
+        
+        # Export settings (except master password)
+        settings = await db.settings.find({"key": {"$ne": MASTER_PASSWORD_HASH_KEY}}, {"_id": 0}).to_list(100)
+        backup_data["settings"] = settings
+        
+        # Generate filename with timestamp and branch
+        branch_settings = await db.settings.find_one({"key": "branch_name"})
+        branch_name = branch_settings.get("value", "Main") if branch_settings else "Main"
+        branch_name = branch_name.replace(" ", "_").replace("/", "_")
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"EasyMoney_Backup_{branch_name}_{timestamp}.json"
+        filepath = os.path.join(backup_path, filename)
+        
+        # Write backup file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(backup_data, f, indent=2, default=str)
+        
+        # Calculate file size
+        file_size = os.path.getsize(filepath)
+        if file_size < 1024:
+            size_str = f"{file_size} bytes"
+        elif file_size < 1024 * 1024:
+            size_str = f"{file_size / 1024:.1f} KB"
+        else:
+            size_str = f"{file_size / (1024 * 1024):.1f} MB"
+        
+        # Record counts
+        records_count = {
+            "users": len(backup_data["users"]),
+            "customers": len(backup_data["customers"]),
+            "loans": len(backup_data["loans"]),
+            "payments": len(backup_data["payments"]),
+            "audit_logs": len(backup_data["audit_logs"])
+        }
+        
+        # Store last backup info
+        last_backup_info = {
+            "filename": filename,
+            "filepath": filepath,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": user["full_name"],
+            "size": size_str,
+            "records": records_count
+        }
+        
+        await db.settings.update_one(
+            {"key": "last_backup"},
+            {"$set": {"key": "last_backup", "value": last_backup_info, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True
+        )
+        
+        await create_audit_log("backup", "database", "create", user["id"], user["full_name"], 
+                              after={"filename": filename, "records": records_count})
+        
+        return BackupResponse(
+            success=True,
+            message="Backup created successfully",
+            filename=filename,
+            filepath=filepath,
+            backup_size=size_str,
+            records_count=records_count
+        )
+        
+    except Exception as e:
+        logging.error(f"Backup failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Backup failed: {str(e)}")
+
+@api_router.post("/backup/restore")
+async def restore_backup(
+    filepath: str,
+    user: dict = Depends(require_role(UserRole.ADMIN))
+):
+    """Restore database from a backup file (CAUTION: This will overwrite current data)"""
+    import os
+    
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Backup file not found")
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            backup_data = json.load(f)
+        
+        # Validate backup structure
+        required_keys = ["backup_info", "users", "customers", "loans", "payments"]
+        for key in required_keys:
+            if key not in backup_data:
+                raise HTTPException(status_code=400, detail=f"Invalid backup file: missing {key}")
+        
+        # Create audit log before restore
+        await create_audit_log("backup", "database", "restore_started", user["id"], user["full_name"],
+                              after={"source_file": filepath, "backup_date": backup_data["backup_info"]["created_at"]})
+        
+        # Clear and restore customers
+        await db.customers.delete_many({})
+        if backup_data["customers"]:
+            await db.customers.insert_many(backup_data["customers"])
+        
+        # Clear and restore loans
+        await db.loans.delete_many({})
+        if backup_data["loans"]:
+            await db.loans.insert_many(backup_data["loans"])
+        
+        # Clear and restore payments
+        await db.payments.delete_many({})
+        if backup_data["payments"]:
+            await db.payments.insert_many(backup_data["payments"])
+        
+        # Note: Users and audit logs are NOT restored for security
+        # Admin must recreate users if needed
+        
+        await create_audit_log("backup", "database", "restore_completed", user["id"], user["full_name"],
+                              after={
+                                  "customers_restored": len(backup_data["customers"]),
+                                  "loans_restored": len(backup_data["loans"]),
+                                  "payments_restored": len(backup_data["payments"])
+                              })
+        
+        return {
+            "success": True,
+            "message": "Database restored successfully",
+            "restored": {
+                "customers": len(backup_data["customers"]),
+                "loans": len(backup_data["loans"]),
+                "payments": len(backup_data["payments"])
+            },
+            "note": "Users were NOT restored for security. Please recreate user accounts if needed."
+        }
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid backup file format")
+    except Exception as e:
+        logging.error(f"Restore failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Restore failed: {str(e)}")
+
 # ==================== ROOT ====================
 @api_router.get("/")
 async def root():
