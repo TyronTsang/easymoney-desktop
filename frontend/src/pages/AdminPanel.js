@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Switch } from '../components/ui/switch';
-import { Settings, Users, FolderOpen, Shield, Plus, UserCheck, UserX, CheckCircle, XCircle, Server, Wifi, WifiOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings, Users, FolderOpen, Shield, Plus, UserCheck, UserX, CheckCircle, XCircle, Server, Wifi, WifiOff, AlertCircle, Loader2, Database, HardDrive, Clock, FileJson, Download, Upload } from 'lucide-react';
 
 export default function AdminPanel() {
   const { api } = useAuth();
@@ -36,6 +36,15 @@ export default function AdminPanel() {
   });
   const [adLoading, setAdLoading] = useState(false);
   const [adTestResult, setAdTestResult] = useState(null);
+
+  // Backup State
+  const [backupConfig, setBackupConfig] = useState({
+    backup_folder_path: '',
+    auto_backup_enabled: false,
+    last_backup: null
+  });
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupResult, setBackupResult] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -65,10 +74,20 @@ export default function AdminPanel() {
     }
   }, [api]);
 
+  const fetchBackupStatus = useCallback(async () => {
+    try {
+      const res = await api().get('/backup/status');
+      setBackupConfig(res.data);
+    } catch (err) {
+      console.error('Failed to load backup status:', err);
+    }
+  }, [api]);
+
   useEffect(() => {
     fetchData();
     fetchAdConfig();
-  }, [fetchData, fetchAdConfig]);
+    fetchBackupStatus();
+  }, [fetchData, fetchAdConfig, fetchBackupStatus]);
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
@@ -152,6 +171,44 @@ export default function AdminPanel() {
     }
   };
 
+  const handleSaveBackupConfig = async () => {
+    setBackupLoading(true);
+    try {
+      await api().put('/backup/config', null, {
+        params: {
+          folder_path: backupConfig.backup_folder_path,
+          auto_backup: backupConfig.auto_backup_enabled
+        }
+      });
+      toast.success('Backup configuration saved');
+      fetchBackupStatus();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save backup configuration');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setBackupLoading(true);
+    setBackupResult(null);
+    try {
+      const res = await api().post('/backup/create', {});
+      setBackupResult(res.data);
+      if (res.data.success) {
+        toast.success('Backup created successfully!');
+        fetchBackupStatus();
+      } else {
+        toast.error('Backup failed');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Backup failed');
+      setBackupResult({ success: false, message: err.response?.data?.detail || 'Backup failed' });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
   const getRoleBadge = (role) => {
     switch (role) {
       case 'admin':
@@ -163,23 +220,32 @@ export default function AdminPanel() {
     }
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    return date.toLocaleString();
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-heading font-bold tracking-tight">Admin Panel</h1>
-        <p className="text-muted-foreground text-sm mt-1">Manage users, settings, and security</p>
+        <p className="text-muted-foreground text-sm mt-1">Manage users, settings, backup, and security</p>
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-3xl grid-cols-5">
           <TabsTrigger value="users" className="gap-2" data-testid="users-tab">
             <Users className="w-4 h-4" /> Users
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2" data-testid="settings-tab">
             <Settings className="w-4 h-4" /> Settings
           </TabsTrigger>
+          <TabsTrigger value="backup" className="gap-2" data-testid="backup-tab">
+            <Database className="w-4 h-4" /> Backup
+          </TabsTrigger>
           <TabsTrigger value="ad" className="gap-2" data-testid="ad-tab">
-            <Server className="w-4 h-4" /> Active Directory
+            <Server className="w-4 h-4" /> AD
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2" data-testid="security-tab">
             <Shield className="w-4 h-4" /> Security
@@ -327,13 +393,170 @@ export default function AdminPanel() {
                   className="bg-secondary" 
                   data-testid="branch-name-input" 
                 />
-                <p className="text-xs text-muted-foreground">This will appear in export filenames</p>
+                <p className="text-xs text-muted-foreground">This will appear in export and backup filenames</p>
               </div>
               <Button onClick={handleSaveSettings} className="w-full bg-red-600 hover:bg-red-700" data-testid="save-settings-btn">
                 Save Settings
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Backup Tab */}
+        <TabsContent value="backup" className="mt-6">
+          <div className="grid gap-6 max-w-2xl">
+            {/* Backup Configuration */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading flex items-center gap-2">
+                  <HardDrive className="w-5 h-5 text-red-500" strokeWidth={1.5} />
+                  Backup Configuration
+                </CardTitle>
+                <CardDescription>Configure automatic database backups to a local folder</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="backup_path">Backup Folder Path</Label>
+                  <Input
+                    id="backup_path"
+                    value={backupConfig.backup_folder_path}
+                    onChange={(e) => setBackupConfig({...backupConfig, backup_folder_path: e.target.value})}
+                    placeholder="C:\Users\Staff\Dropbox\EasyMoneyLoans\Backups"
+                    className="bg-secondary font-mono text-sm"
+                    data-testid="backup-path-input"
+                  />
+                  <p className="text-xs text-muted-foreground">Backups will be saved as JSON files with timestamps</p>
+                </div>
+                
+                <Button onClick={handleSaveBackupConfig} disabled={backupLoading} className="w-full bg-red-600 hover:bg-red-700" data-testid="save-backup-config-btn">
+                  {backupLoading ? 'Saving...' : 'Save Backup Settings'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Create Backup */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading flex items-center gap-2">
+                  <Download className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
+                  Create Backup
+                </CardTitle>
+                <CardDescription>Create a full database backup now</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Last Backup Info */}
+                {backupConfig.last_backup && (
+                  <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                    <h4 className="font-medium flex items-center gap-2 mb-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      Last Backup
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="text-muted-foreground">Date:</div>
+                      <div>{formatDate(backupConfig.last_backup.created_at)}</div>
+                      <div className="text-muted-foreground">File:</div>
+                      <div className="font-mono text-xs truncate">{backupConfig.last_backup.filename}</div>
+                      <div className="text-muted-foreground">Size:</div>
+                      <div>{backupConfig.last_backup.size}</div>
+                      <div className="text-muted-foreground">Records:</div>
+                      <div>
+                        {backupConfig.last_backup.records && (
+                          <span>
+                            {backupConfig.last_backup.records.customers} customers, {backupConfig.last_backup.records.loans} loans
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Backup Result */}
+                {backupResult && (
+                  <div className={`p-4 rounded-lg border ${backupResult.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                    <div className="flex items-center gap-2">
+                      {backupResult.success ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      )}
+                      <span className={`font-medium ${backupResult.success ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {backupResult.message}
+                      </span>
+                    </div>
+                    {backupResult.success && backupResult.filename && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        <p className="flex items-center gap-2">
+                          <FileJson className="w-4 h-4" />
+                          {backupResult.filename} ({backupResult.backup_size})
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleCreateBackup} 
+                  disabled={backupLoading || !backupConfig.backup_folder_path}
+                  className="w-full gap-2"
+                  variant="secondary"
+                  data-testid="create-backup-btn"
+                >
+                  {backupLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating Backup...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Create Backup Now
+                    </>
+                  )}
+                </Button>
+
+                {!backupConfig.backup_folder_path && (
+                  <p className="text-xs text-amber-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Configure backup folder path above to enable backups
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Backup Info */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
+                  About Backups
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
+                    <span>Backups include all customers, loans, and payment records</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
+                    <span>Audit logs are included for compliance</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
+                    <span>Backups are saved as JSON files with timestamps</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Shield className="w-4 h-4 text-amber-500 mt-0.5" />
+                    <span>User passwords are NOT included in backups for security</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <HardDrive className="w-4 h-4 text-blue-400 mt-0.5" />
+                    <span>Store backups in a Dropbox-synced folder for cloud backup</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Active Directory Tab */}
@@ -475,29 +698,8 @@ export default function AdminPanel() {
                       {adTestResult.message}
                     </span>
                   </div>
-                  {adTestResult.server_info && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      <p>Server Type: {adTestResult.server_info.server_type}</p>
-                    </div>
-                  )}
                 </div>
               )}
-
-              {/* Info Box */}
-              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="text-blue-400 font-medium">How AD Authentication Works</p>
-                    <ul className="text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                      <li>Users can login with their Windows username (e.g., john.smith)</li>
-                      <li>New AD users are automatically created with the default role</li>
-                      <li>Local users can still login with their existing credentials</li>
-                      <li>Admins can promote AD users to higher roles after they login</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
 
               {/* Action Buttons */}
               <div className="flex gap-4">
@@ -538,7 +740,7 @@ export default function AdminPanel() {
                 <Shield className="w-5 h-5 text-red-500" strokeWidth={1.5} />
                 Security & Integrity
               </CardTitle>
-              <CardDescription>Verify data integrity and manage security settings</CardDescription>
+              <CardDescription>Verify data integrity and view security features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="p-4 rounded-lg bg-secondary/50 border border-border">
@@ -596,6 +798,10 @@ export default function AdminPanel() {
                   <li className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-500" />
                     Windows Active Directory integration
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    Database backup to local/cloud storage
                   </li>
                 </ul>
               </div>
