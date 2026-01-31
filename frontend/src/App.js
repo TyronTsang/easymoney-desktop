@@ -1,53 +1,95 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "./components/ui/sonner";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import MasterPasswordScreen from "./pages/MasterPasswordScreen";
+import LoginScreen from "./pages/LoginScreen";
+import Dashboard from "./pages/Dashboard";
+import Customers from "./pages/Customers";
+import CreateLoan from "./pages/CreateLoan";
+import LoanList from "./pages/LoanList";
+import LoanDetails from "./pages/LoanDetails";
+import FraudAlerts from "./pages/FraudAlerts";
+import Export from "./pages/Export";
+import AdminPanel from "./pages/AdminPanel";
+import AuditLogs from "./pages/AuditLogs";
+import Layout from "./components/Layout";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user, isAuthenticated, isAppUnlocked } = useAuth();
+  
+  if (!isAppUnlocked) {
+    return <Navigate to="/unlock" replace />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <Layout>{children}</Layout>;
 };
+
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, isAppUnlocked } = useAuth();
+  
+  if (!isAppUnlocked) {
+    return <Navigate to="/unlock" replace />;
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
+};
+
+const UnlockRoute = ({ children }) => {
+  const { isAppUnlocked, isAuthenticated } = useAuth();
+  
+  if (isAppUnlocked && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  if (isAppUnlocked) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/unlock" element={<UnlockRoute><MasterPasswordScreen /></UnlockRoute>} />
+      <Route path="/login" element={<PublicRoute><LoginScreen /></PublicRoute>} />
+      
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+      <Route path="/loans/new" element={<ProtectedRoute><CreateLoan /></ProtectedRoute>} />
+      <Route path="/loans" element={<ProtectedRoute><LoanList /></ProtectedRoute>} />
+      <Route path="/loans/:loanId" element={<ProtectedRoute><LoanDetails /></ProtectedRoute>} />
+      <Route path="/fraud-alerts" element={<ProtectedRoute><FraudAlerts /></ProtectedRoute>} />
+      <Route path="/export" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><Export /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminPanel /></ProtectedRoute>} />
+      <Route path="/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
+      
+      <Route path="/" element={<Navigate to="/unlock" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+        <Toaster position="top-right" richColors />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
