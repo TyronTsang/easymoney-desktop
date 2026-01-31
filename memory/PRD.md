@@ -103,10 +103,10 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - [ ] Dark/light theme toggle
 
 ## Next Tasks
-1. **Build Electron EXE**: Run `cd electron && npm install && npm run build` on Windows machine
+1. **Build Electron EXE**: Run `cd electron && npm install && npm run build` on Windows machine (or use build.bat)
 2. **Test Electron App**: Verify SQLite database works correctly in packaged EXE
-3. **Windows AD Integration**: Add optional Active Directory authentication
-4. **DPAPI Integration**: Use Windows DPAPI for even more secure encryption key storage
+3. **Configure AD**: In Admin Panel → Active Directory tab, set up your organization's AD server
+4. **Code Signing**: For production, sign the EXE with a code signing certificate
 
 ## Electron App Structure
 ```
