@@ -13,24 +13,24 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 7%;
-    --popover-foreground: 0 0% 98%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
     --primary: 0 72% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 17%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 5% 17%;
-    --muted-foreground: 240 5% 65%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
     --accent: 0 72% 51%;
-    --accent-foreground: 0 0% 98%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5% 17%;
-    --input: 240 5% 17%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
     --ring: 0 72% 51%;
     --radius: 0.375rem;
   }
@@ -54,58 +54,58 @@
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - light theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: #f4f4f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #d4d4d8;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #a1a1aa;
 }
 
 /* Status badges */
 .badge-success {
-  @apply bg-emerald-500/15 text-emerald-500 border border-emerald-500/20;
+  @apply bg-emerald-50 text-emerald-600 border border-emerald-200;
 }
 
 .badge-warning {
-  @apply bg-amber-500/15 text-amber-500 border border-amber-500/20;
+  @apply bg-amber-50 text-amber-600 border border-amber-200;
 }
 
 .badge-error {
-  @apply bg-red-500/15 text-red-500 border border-red-500/20;
+  @apply bg-red-50 text-red-600 border border-red-200;
 }
 
 .badge-neutral {
-  @apply bg-zinc-500/15 text-zinc-400 border border-zinc-500/20;
+  @apply bg-zinc-100 text-zinc-600 border border-zinc-200;
 }
 
 /* Fraud alert row highlight */
 .fraud-quick-close {
-  @apply bg-amber-500/10 border-l-2 border-l-amber-500;
+  @apply bg-amber-50 border-l-2 border-l-amber-500;
 }
 
 .fraud-duplicate {
-  @apply bg-purple-500/10 border-l-2 border-l-purple-500;
+  @apply bg-purple-50 border-l-2 border-l-purple-500;
 }
 
 /* Glow effects */
 .glow-primary {
-  box-shadow: 0 0 15px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
 }
 
 .glow-destructive {
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
 }
 
 /* Animation for fraud shake */
