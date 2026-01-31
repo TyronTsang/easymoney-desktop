@@ -5,114 +5,102 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { User, Lock, ArrowLeft } from 'lucide-react';
-
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_secureloans-desk/artifacts/2f2hs30o_easy_money_loans_logo_enhanced_white%20%281%29.png";
+import { Lock, ArrowLeft } from 'lucide-react';
 
 export default function LoginScreen() {
-  const { login, lockApp } = useAuth();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!username || !password) {
+      toast.error('Please enter username and password');
+      return;
+    }
+    
     setLoading(true);
     try {
       await login(username, password);
       toast.success('Login successful');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Invalid credentials');
+      toast.error(err.response?.data?.detail || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img 
-              src={LOGO_URL} 
-              alt="Easy Money Loans" 
-              className="h-14 object-contain"
-            />
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%)'
+    }}>
+      {/* Back to website link */}
+      <a href="#" className="absolute top-6 left-6 text-white/90 hover:text-white flex items-center gap-2 text-sm font-medium">
+        <ArrowLeft className="w-4 h-4" />
+        Back to website
+      </a>
+
+      <Card className="w-full max-w-md shadow-2xl border-0">
+        <CardHeader className="text-center space-y-4 pt-8">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-red-600 font-bold text-sm tracking-wide">EASY MONEY</span>
+            <span className="text-red-600 text-lg">💵💵</span>
+            <span className="text-red-600 font-bold text-sm tracking-wide">LOANS</span>
           </div>
-          <p className="text-muted-foreground mt-2 text-sm">Staff Portal</p>
-        </div>
-
-        <Card className="border-border bg-card">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl font-heading flex items-center gap-2">
-              <User className="w-5 h-5 text-red-500" strokeWidth={1.5} />
-              Staff Login
-            </CardTitle>
-            <CardDescription>
-              Enter your credentials to access the system
+          
+          <div>
+            <CardTitle className="text-2xl font-heading text-gray-900">Staff Portal</CardTitle>
+            <CardDescription className="text-gray-500 mt-2">
+              Sign in to access the loan management system
             </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="Enter username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-secondary"
-                    data-testid="login-username-input"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-secondary"
-                    data-testid="login-password-input"
-                    required
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-red-600 hover:bg-red-700" 
-                  disabled={loading}
-                  data-testid="login-submit-btn"
-                >
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-
-                <Button 
-                  type="button"
-                  variant="ghost"
-                  className="w-full text-muted-foreground"
-                  onClick={lockApp}
-                  data-testid="back-to-lock-btn"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Lock Screen
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Offline Desktop Application • Data is stored locally
-        </p>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pb-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-700">Email</Label>
+              <Input
+                id="email"
+                type="text"
+                placeholder="staff@easymoneyloans.co.za"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="h-12 bg-gray-50 border-gray-200 focus:border-red-500 focus:ring-red-500"
+                data-testid="login-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-700">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 bg-gray-50 border-gray-200 focus:border-red-500 focus:ring-red-500"
+                data-testid="login-password"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-medium text-base"
+              data-testid="login-submit"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
+          
+          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
+            <p className="text-sm text-gray-400 flex items-center justify-center gap-2">
+              <Lock className="w-4 h-4" />
+              This portal is for authorized staff only
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
