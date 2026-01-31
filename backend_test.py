@@ -371,10 +371,11 @@ class EasyMoneyLoansAPITester:
             self.log_result("List Users", False, str(data))
 
         # Create test user
+        timestamp = datetime.now().strftime("%H%M%S")
         test_user = {
-            "username": "testemployee",
+            "username": f"testemployee{timestamp}",
             "password": "testpass123",
-            "full_name": "Test Employee",
+            "full_name": f"Test Employee {timestamp}",
             "role": "employee",
             "branch": "Test Branch"
         }
