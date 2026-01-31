@@ -498,10 +498,8 @@ export default function LoanList() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-gray-500">Principal:</div>
                     <div className="font-mono text-gray-900">R {calc.principal.toFixed(2)}</div>
-                    <div className="text-gray-500">Interest (40%):</div>
-                    <div className="font-mono text-gray-900">R {calc.interest.toFixed(2)}</div>
-                    <div className="text-gray-500">Service Fee:</div>
-                    <div className="font-mono text-gray-900">R {calc.serviceFee.toFixed(2)}</div>
+                    <div className="text-gray-500">Fees & Charges:</div>
+                    <div className="font-mono text-gray-900">R {(calc.interest + calc.serviceFee).toFixed(2)}</div>
                     <div className="text-gray-700 font-medium">Total:</div>
                     <div className="font-mono font-bold text-red-600">R {calc.total.toFixed(2)}</div>
                     <div className="text-gray-500">Per installment:</div>
