@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win",
-    "build:portable": "electron-builder --win portable"
+    "build:portable": "electron-builder --win portable",
+    "build:dir": "electron-builder --dir"
   },
   "author": "EasyMoneyLoans",
   "license": "UNLICENSED",
@@ -16,36 +17,47 @@
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "exceljs": "^4.4.0"
   },
   "build": {
     "appId": "com.easymoney.desktop",
     "productName": "EasyMoneyLoans",
+    "copyright": "Copyright © 2024 EasyMoneyLoans",
     "directories": {
       "output": "dist"
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
       ],
       "icon": "icon.ico"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico"
     },
     "files": [
       "main.js",
       "preload.js",
       "database.js",
-      "node_modules/**/*"
+      "package.json"
     ],
     "extraResources": [
       {
         "from": "../frontend/build",
         "to": "app"
       }
-    ]
+    ],
+    "asar": true
   }
 }
