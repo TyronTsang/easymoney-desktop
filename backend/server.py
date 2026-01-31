@@ -21,6 +21,15 @@ import io
 import base64
 from enum import Enum
 
+# Windows AD/LDAP Authentication Support
+try:
+    from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
+    from ldap3.core.exceptions import LDAPException, LDAPBindError
+    LDAP_AVAILABLE = True
+except ImportError:
+    LDAP_AVAILABLE = False
+    logging.warning("ldap3 not installed - AD authentication disabled")
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
