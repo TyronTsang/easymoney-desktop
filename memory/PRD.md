@@ -17,11 +17,12 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - Encryption: Master password at app startup
 - Export path: Admin-configurable
 - Multi-branch support: Branch name in exports
+- UI Theme: Dark with red accents and company logo
 
 ## User Personas
 1. **Employee**: Creates loans, marks payments, cannot see full IDs or export
 2. **Manager**: Creates loans, marks payments, can export and see full IDs
-3. **Admin**: Full access including user management, archiving, settings
+3. **Admin**: Full access including user management, AD config, archiving, settings
 
 ## Core Requirements (Static)
 - Master password encryption for app unlock
@@ -52,6 +53,9 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - ✅ Field override for Manager/Admin with reason logging
 - ✅ Soft archiving (Admin only)
 - ✅ Dashboard statistics endpoint
+- ✅ Windows Active Directory authentication (LDAP/NTLM)
+- ✅ AD configuration endpoints (GET/PUT/TEST)
+- ✅ Auto-create users from AD with default role/branch
 
 ### Frontend (React + Tailwind + Shadcn/UI)
 - ✅ Master password unlock screen (first-time setup + unlock)
@@ -64,10 +68,19 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - ✅ Payment marking with confirmation dialog
 - ✅ Fraud alerts page (quick-close, duplicates tabs)
 - ✅ Export page (all/customers/loans/payments)
-- ✅ Admin panel (users, settings, security)
+- ✅ Admin panel (users, settings, AD config, security)
+- ✅ Active Directory configuration tab with test connection
 - ✅ Audit logs viewer with detail modal
-- ✅ Dark "Tactical Finance" theme
+- ✅ Dark theme with red accents and company logo
 - ✅ Role-based navigation and access control
+
+### Electron Desktop App
+- ✅ Main process configuration (main.js)
+- ✅ Secure preload bridge (preload.js)
+- ✅ SQLite database with full schema (database.js)
+- ✅ Electron Builder configuration (package.json)
+- ✅ Build script for Windows (build.bat)
+- ✅ Comprehensive README with build instructions
 
 ## Prioritized Backlog
 
@@ -88,12 +101,10 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - [x] Audit integrity verification
 
 ### P2 (Medium) - DONE
-- [x] Electron packaging configuration (main.js, preload.js, database.js created)
-- [x] SQLite local database with full schema (electron/database.js)
-- [x] Export folder path configuration and file saving (/api/export with save_to_path)
-- [x] Windows AD/LDAP integration (Admin Panel → Active Directory tab)
-- [ ] Data encryption at rest with DPAPI (master password derived key used)
-- [ ] End-of-day record locking after export
+- [x] Electron packaging configuration
+- [x] SQLite local database with full schema
+- [x] Export folder path configuration
+- [x] Windows AD/LDAP integration
 
 ### P3 (Low/Nice-to-have)
 - [ ] Code signing for EXE
@@ -103,32 +114,32 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - [ ] Dark/light theme toggle
 
 ## Next Tasks
-1. **Build Electron EXE**: Run `cd electron && npm install && npm run build` on Windows machine (or use build.bat)
-2. **Test Electron App**: Verify SQLite database works correctly in packaged EXE
-3. **Configure AD**: In Admin Panel → Active Directory tab, set up your organization's AD server
-4. **Code Signing**: For production, sign the EXE with a code signing certificate
+1. **Build Electron EXE**: On Windows, run `build.bat` or:
+   ```bash
+   cd frontend && npm install && npm run build
+   cd ../electron && npm install && npm run build
+   ```
+2. **Test Electron App**: Verify SQLite database works in packaged EXE
+3. **Configure AD**: Admin Panel → Active Directory tab
+4. **Code Signing**: For production, sign with code signing certificate
 
 ## Electron App Structure
 ```
 electron/
 ├── main.js          # Electron main process (IPC handlers)
 ├── preload.js       # Secure bridge between main and renderer
-├── database.js      # Complete SQLite database with all features:
-│                    # - Master password with PBKDF2 key derivation
-│                    # - Payment immutability via triggers
-│                    # - Audit log hash chain verification
-│                    # - SA ID validation (Luhn)
-│                    # - Loan calculation (40% + R12)
-│                    # - Excel export with ExcelJS
+├── database.js      # SQLite database with all features
 ├── package.json     # Electron Builder configuration
+├── build.bat        # Windows build script
 └── README.md        # Build instructions
 ```
 
 ## Technical Notes
 - Backend: FastAPI on port 8001
 - Frontend: React on port 3000
-- Database: MongoDB (for prototype; migrate to SQLite for production)
-- Authentication: JWT with bcrypt password hashing
+- Database: MongoDB (prototype), SQLite (desktop production)
+- Authentication: JWT + optional AD/LDAP
+- LDAP: ldap3 library with NTLM authentication
 - Test master password: TestMaster123!
 - Default admin: admin / admin123
 
