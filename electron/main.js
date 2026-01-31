@@ -5,6 +5,15 @@ const Database = require('./database');
 let mainWindow;
 let db;
 
+// Get the correct path for resources in both dev and production
+function getResourcePath() {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'app');
+  }
+  // Development mode
+  return path.join(__dirname, '..', 'frontend', 'build');
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -27,7 +36,9 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../resources/app/index.html'));
+    const indexPath = path.join(getResourcePath(), 'index.html');
+    console.log('Loading app from:', indexPath);
+    mainWindow.loadFile(indexPath);
   }
 
   mainWindow.once('ready-to-show', () => {
