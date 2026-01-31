@@ -101,3 +101,34 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the payment marking functionality in the Loan Register to verify the bug fix for 'Cannot read properties of null (reading 'stopPropagation')' error when trying to mark payments as paid"
+
+frontend:
+  - task: "Payment marking functionality bug fix"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/LoanList.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "Initial testing setup - need to verify payment toggle switches work without stopPropagation errors"
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+
+test_plan:
+  current_focus:
+    - "Payment marking functionality bug fix"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: "Starting testing of payment marking functionality. Will test: 1) Navigation to /loans, 2) Authentication, 3) Create test loan if needed, 4) Test payment toggle switches, 5) Verify no stopPropagation errors occur"
