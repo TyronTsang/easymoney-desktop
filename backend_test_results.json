@@ -1,0 +1,148 @@
+{
+  "summary": {
+    "total_tests": 23,
+    "passed_tests": 20,
+    "failed_tests": 3,
+    "success_rate": 86.95652173913044
+  },
+  "results": [
+    {
+      "test": "API Connectivity",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:41.256078"
+    },
+    {
+      "test": "Master Password Status Check",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:41.705228"
+    },
+    {
+      "test": "Master Password Setup",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:42.641323"
+    },
+    {
+      "test": "Master Password Verification",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:43.519945"
+    },
+    {
+      "test": "Admin Login",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:44.230397"
+    },
+    {
+      "test": "Get Current User",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:44.681031"
+    },
+    {
+      "test": "Dashboard Stats Structure",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:45.030288"
+    },
+    {
+      "test": "Create Customer",
+      "success": false,
+      "details": "{'status_code': 520, 'text': 'Internal Server Error'}",
+      "timestamp": "2026-01-31T13:59:45.413870"
+    },
+    {
+      "test": "Loan Creation",
+      "success": false,
+      "details": "No test customer available",
+      "timestamp": "2026-01-31T13:59:45.413885"
+    },
+    {
+      "test": "Payment Management",
+      "success": false,
+      "details": "No test loan available",
+      "timestamp": "2026-01-31T13:59:45.413892"
+    },
+    {
+      "test": "List Users",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:45.864165"
+    },
+    {
+      "test": "Admin User Exists",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:45.864183"
+    },
+    {
+      "test": "Create User",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:46.450855"
+    },
+    {
+      "test": "Toggle User Status",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:46.801691"
+    },
+    {
+      "test": "Export All Data",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:47.589769"
+    },
+    {
+      "test": "Export Customers",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:48.053818"
+    },
+    {
+      "test": "Export Loans",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:48.505824"
+    },
+    {
+      "test": "Export Payments",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:49.294195"
+    },
+    {
+      "test": "List Audit Logs",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:49.641387"
+    },
+    {
+      "test": "Audit Logs Generated",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:49.641400"
+    },
+    {
+      "test": "Audit Log Integrity",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:50.297332"
+    },
+    {
+      "test": "Get Settings",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:50.640367"
+    },
+    {
+      "test": "Update Settings",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-31T13:59:51.089323"
+    }
+  ]
+}
