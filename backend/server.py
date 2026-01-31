@@ -417,11 +417,14 @@ async def authenticate_with_ad(username: str, password: str, ad_config: dict) ->
         
         server = Server(server_url, get_info=ALL)
         
+        # Extract clean username for search
+        clean_username = username.replace('\\', '/').split('/')[-1].split('@')[0]
+        
         # Try NTLM authentication (most common for Windows AD)
         with Connection(server, user=user_dn, password=password, authentication=NTLM, raise_exceptions=True) as conn:
             if conn.bound:
                 # Successfully authenticated, now get user info
-                search_filter = f"(sAMAccountName={username.split('\\')[-1].split('@')[0]})"
+                search_filter = f"(sAMAccountName={clean_username})"
                 
                 if base_dn:
                     conn.search(
@@ -442,8 +445,8 @@ async def authenticate_with_ad(username: str, password: str, ad_config: dict) ->
                 
                 # Fallback: Return basic info if search fails
                 return {
-                    'username': username.split('\\')[-1].split('@')[0],
-                    'full_name': username.split('\\')[-1].split('@')[0],
+                    'username': clean_username,
+                    'full_name': clean_username,
                     'email': None,
                     'groups': []
                 }
