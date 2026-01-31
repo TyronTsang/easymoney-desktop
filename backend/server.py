@@ -496,11 +496,11 @@ async def create_customer(data: CustomerCreate, user: dict = Depends(get_current
         "archived_by": None
     }
     
-    await db.customers.insert_one(customer)
+    result = await db.customers.insert_one(customer)
     await create_audit_log("customer", customer["id"], "create", user["id"], user["full_name"], 
                            after={"client_name": data.client_name, "mandate_id": data.mandate_id})
     
-    creator = await db.users.find_one({"id": user["id"]}, {"full_name": 1})
+    creator = await db.users.find_one({"id": user["id"]}, {"full_name": 1, "_id": 0})
     can_view_full_id = user["role"] in [UserRole.MANAGER.value, UserRole.ADMIN.value]
     
     return {
