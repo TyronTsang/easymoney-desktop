@@ -647,7 +647,7 @@ async def create_customer(data: CustomerCreate, user: dict = Depends(get_current
         "archived_by": None
     }
     
-    result = await db.customers.insert_one(customer)
+    await db.customers.insert_one(customer)
     await create_audit_log("customer", customer["id"], "create", user["id"], user["full_name"], 
                            after={"client_name": data.client_name, "mandate_id": data.mandate_id})
     
