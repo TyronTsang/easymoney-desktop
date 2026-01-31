@@ -66,6 +66,10 @@ class RepaymentPlan(int, Enum):
     FORTNIGHTLY = 2
     WEEKLY = 4
 
+class AuthMethod(str, Enum):
+    LOCAL = "local"
+    ACTIVE_DIRECTORY = "active_directory"
+
 # ==================== MODELS ====================
 class UserCreate(BaseModel):
     username: str
@@ -77,6 +81,15 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+    auth_method: Optional[AuthMethod] = AuthMethod.LOCAL
+
+class ADConfigUpdate(BaseModel):
+    enabled: bool = False
+    server_url: Optional[str] = None  # e.g., ldap://ad.company.com:389
+    domain: Optional[str] = None  # e.g., COMPANY
+    base_dn: Optional[str] = None  # e.g., OU=Users,DC=company,DC=com
+    default_role: Optional[UserRole] = UserRole.EMPLOYEE
+    default_branch: Optional[str] = "Head Office"
 
 class UserResponse(BaseModel):
     id: str
