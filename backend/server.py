@@ -854,7 +854,7 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
         for row, p in enumerate(payments, 2):
             payer = None
             if p.get("paid_by"):
-                payer = await db.users.find_one({"id": p["paid_by"]}, {"full_name": 1})
+                payer = await db.users.find_one({"id": p["paid_by"]}, {"full_name": 1, "_id": 0})
             
             ws.cell(row=row, column=1, value=p["id"]).border = border
             ws.cell(row=row, column=2, value=p["loan_id"]).border = border
