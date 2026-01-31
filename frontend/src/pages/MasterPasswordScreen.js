@@ -5,10 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Lock, Shield, KeyRound, AlertCircle } from 'lucide-react';
+import { Lock, KeyRound, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
-
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_secureloans-desk/artifacts/2f2hs30o_easy_money_loans_logo_enhanced_white%20%281%29.png";
 
 export default function MasterPasswordScreen() {
   const { masterPasswordSet, setupMasterPassword, unlockApp } = useAuth();
@@ -70,68 +68,77 @@ export default function MasterPasswordScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img 
-              src={LOGO_URL} 
-              alt="Easy Money Loans" 
-              className="h-14 object-contain"
-            />
-          </div>
-          <p className="text-muted-foreground mt-2 text-sm">Secure Desktop Application</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%)'
+    }}>
+      {/* Back link */}
+      <a href="#" className="absolute top-6 left-6 text-white/90 hover:text-white flex items-center gap-2 text-sm font-medium">
+        <ArrowLeft className="w-4 h-4" />
+        Back to website
+      </a>
 
+      <div className="w-full max-w-md">
         {/* Show default credentials after setup */}
         {defaultCredentials && (
-          <Alert className="mb-6 border-red-500/20 bg-red-500/10">
-            <KeyRound className="h-4 w-4 text-red-500" />
-            <AlertDescription className="text-sm">
-              <p className="font-medium text-red-500 mb-2">Master password set! Default admin created:</p>
-              <div className="font-mono text-xs bg-black/30 p-3 rounded-md space-y-1">
-                <p>Username: <span className="text-red-400">{defaultCredentials.username}</span></p>
-                <p>Password: <span className="text-red-400">{defaultCredentials.password}</span></p>
-              </div>
-              <p className="mt-2 text-muted-foreground">Please change this password after first login.</p>
-              <Button 
-                onClick={handleContinueAfterSetup} 
-                className="w-full mt-4 bg-red-600 hover:bg-red-700"
-                disabled={loading}
-                data-testid="continue-after-setup-btn"
-              >
-                Continue to Login
-              </Button>
-            </AlertDescription>
-          </Alert>
+          <Card className="shadow-2xl border-0">
+            <CardContent className="pt-6">
+              <Alert className="border-red-200 bg-red-50">
+                <KeyRound className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-sm">
+                  <p className="font-medium text-red-600 mb-2">Master password set! Default admin created:</p>
+                  <div className="font-mono text-xs bg-gray-100 p-3 rounded-md space-y-1 text-gray-900">
+                    <p>Username: <span className="text-red-600 font-semibold">{defaultCredentials.username}</span></p>
+                    <p>Password: <span className="text-red-600 font-semibold">{defaultCredentials.password}</span></p>
+                  </div>
+                  <p className="mt-2 text-gray-500">Please change this password after first login.</p>
+                  <Button 
+                    onClick={handleContinueAfterSetup} 
+                    className="w-full mt-4 bg-red-600 hover:bg-red-700"
+                    disabled={loading}
+                    data-testid="continue-after-setup-btn"
+                  >
+                    Continue to Login
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
         )}
 
         {!defaultCredentials && (
-          <Card className="border-border bg-card">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-heading flex items-center gap-2">
-                <Lock className="w-5 h-5 text-red-500" strokeWidth={1.5} />
-                {masterPasswordSet ? 'Unlock Application' : 'First-Time Setup'}
-              </CardTitle>
-              <CardDescription>
-                {masterPasswordSet 
-                  ? 'Enter the master password to access the application' 
-                  : 'Create a master password to encrypt your data'}
-              </CardDescription>
+          <Card className="shadow-2xl border-0">
+            <CardHeader className="text-center space-y-4 pt-8">
+              {/* Logo */}
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-red-600 font-bold text-sm tracking-wide">EASY MONEY</span>
+                <span className="text-red-600 text-lg">💵💵</span>
+                <span className="text-red-600 font-bold text-sm tracking-wide">LOANS</span>
+              </div>
+              
+              <div>
+                <CardTitle className="text-2xl font-heading text-gray-900 flex items-center justify-center gap-2">
+                  <Lock className="w-6 h-6 text-red-500" strokeWidth={1.5} />
+                  {masterPasswordSet ? 'Unlock Application' : 'First-Time Setup'}
+                </CardTitle>
+                <CardDescription className="text-gray-500 mt-2">
+                  {masterPasswordSet 
+                    ? 'Enter the master password to access the application' 
+                    : 'Create a master password to encrypt your data'}
+                </CardDescription>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-8">
               <form onSubmit={masterPasswordSet ? handleUnlock : handleSetup}>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="password">Master Password</Label>
+                    <Label htmlFor="password" className="text-gray-700">Master Password</Label>
                     <Input
                       id="password"
                       type="password"
                       placeholder="Enter master password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-secondary"
+                      className="h-12 bg-gray-50 border-gray-200 focus:border-red-500 focus:ring-red-500"
                       data-testid="master-password-input"
                       required
                     />
@@ -139,14 +146,14 @@ export default function MasterPasswordScreen() {
                   
                   {!masterPasswordSet && (
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Label htmlFor="confirmPassword" className="text-gray-700">Confirm Password</Label>
                       <Input
                         id="confirmPassword"
                         type="password"
                         placeholder="Confirm master password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="bg-secondary"
+                        className="h-12 bg-gray-50 border-gray-200 focus:border-red-500 focus:ring-red-500"
                         data-testid="confirm-password-input"
                         required
                       />
@@ -154,9 +161,9 @@ export default function MasterPasswordScreen() {
                   )}
 
                   {!masterPasswordSet && (
-                    <Alert className="border-amber-500/20 bg-amber-500/10">
-                      <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <AlertDescription className="text-xs text-amber-200/80">
+                    <Alert className="border-amber-200 bg-amber-50">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-xs text-amber-700">
                         This password encrypts all application data. If forgotten, data cannot be recovered.
                       </AlertDescription>
                     </Alert>
@@ -164,7 +171,7 @@ export default function MasterPasswordScreen() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-red-600 hover:bg-red-700" 
+                    className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-medium" 
                     disabled={loading}
                     data-testid="master-password-submit"
                   >
@@ -177,7 +184,7 @@ export default function MasterPasswordScreen() {
         )}
 
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <p className="text-center text-xs text-white/70 mt-6">
           Offline Desktop Application • Version 1.0.0
         </p>
       </div>
