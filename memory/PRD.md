@@ -110,12 +110,14 @@ Build an INTERNAL Windows DESKTOP application for EasyMoneyLoans Staff Portal wi
 - [x] SQLite local database with full schema
 - [x] Export folder path configuration
 - [x] Windows AD/LDAP integration
+- [x] Database backup to configurable folder (JSON format)
+- [x] Backup restore functionality
 
 ### P3 (Low/Nice-to-have)
 - [ ] Code signing for EXE
+- [ ] Scheduled automatic backups
 - [ ] Currency formatting with commas (R1,412.00)
-- [ ] Backup/restore functionality
-- [ ] Report generation (PDF)
+- [ ] PDF report generation
 - [ ] Dark/light theme toggle
 
 ## Next Tasks
