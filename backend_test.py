@@ -397,26 +397,111 @@ class EasyMoneyLoansAPITester:
         return True
 
     def test_export_functionality(self):
-        """Test data export functionality"""
+        """Test data export functionality including new folder saving feature"""
         print("\n📤 Testing Export Functionality...")
         
+        # Test 1: Export download (save_to_path=false) - should work without folder configured
         export_request = {
-            "export_type": "all"
+            "export_type": "all",
+            "save_to_path": False
         }
         
         success, data = self.make_request('POST', 'export', export_request)
         if success and data.get('filename') and data.get('data'):
-            self.log_result("Export All Data", True)
-            
-            # Test specific exports
-            for export_type in ['customers', 'loans', 'payments']:
-                success, data = self.make_request('POST', 'export', {"export_type": export_type})
-                if success and data.get('filename'):
-                    self.log_result(f"Export {export_type.title()}", True)
-                else:
-                    self.log_result(f"Export {export_type.title()}", False, str(data))
+            self.log_result("Export Download (save_to_path=false)", True)
         else:
-            self.log_result("Export All Data", False, str(data))
+            self.log_result("Export Download (save_to_path=false)", False, str(data))
+
+        # Test 2: Configure export folder path in settings
+        settings_update = {
+            "export_folder_path": "/tmp/exports"
+        }
+        
+        success, update_data = self.make_request('PUT', 'settings', settings_update)
+        if success:
+            self.log_result("Configure Export Folder Path", True)
+        else:
+            self.log_result("Configure Export Folder Path", False, str(update_data))
+            return False
+
+        # Test 3: Verify settings persistence - get settings and check export_folder_path
+        success, settings_data = self.make_request('GET', 'settings')
+        if success and settings_data.get('export_folder_path') == '/tmp/exports':
+            self.log_result("Export Folder Path Persistence", True)
+        else:
+            self.log_result("Export Folder Path Persistence", False, 
+                          f"Expected '/tmp/exports', got: {settings_data.get('export_folder_path')}")
+
+        # Test 4: Create export directory if it doesn't exist
+        import os
+        os.makedirs('/tmp/exports', exist_ok=True)
+        
+        # Test 5: Export with save_to_path=true (should save to configured folder)
+        export_request = {
+            "export_type": "all",
+            "save_to_path": True
+        }
+        
+        success, data = self.make_request('POST', 'export', export_request)
+        if success and data.get('saved_to_path') and '/tmp/exports' in data.get('saved_to_path', ''):
+            self.log_result("Export Save to Configured Folder", True)
+            
+            # Verify file actually exists
+            saved_path = data.get('saved_to_path')
+            if os.path.exists(saved_path):
+                self.log_result("Export File Actually Created", True)
+                # Clean up test file
+                try:
+                    os.remove(saved_path)
+                    self.log_result("Export File Cleanup", True)
+                except:
+                    self.log_result("Export File Cleanup", False, "Could not remove test file")
+            else:
+                self.log_result("Export File Actually Created", False, f"File not found at: {saved_path}")
+        else:
+            self.log_result("Export Save to Configured Folder", False, str(data))
+
+        # Test 6: Test specific export types with folder saving
+        for export_type in ['customers', 'loans', 'payments']:
+            export_request = {
+                "export_type": export_type,
+                "save_to_path": True
+            }
+            success, data = self.make_request('POST', 'export', export_request)
+            if success and data.get('saved_to_path'):
+                self.log_result(f"Export {export_type.title()} to Folder", True)
+                # Clean up
+                try:
+                    if os.path.exists(data.get('saved_to_path')):
+                        os.remove(data.get('saved_to_path'))
+                except:
+                    pass
+            else:
+                self.log_result(f"Export {export_type.title()} to Folder", False, str(data))
+
+        # Test 7: Test error handling - invalid export folder path
+        invalid_settings = {
+            "export_folder_path": "/invalid/nonexistent/path"
+        }
+        
+        success, update_data = self.make_request('PUT', 'settings', invalid_settings)
+        if success:
+            # Try to export to invalid path
+            export_request = {
+                "export_type": "customers",
+                "save_to_path": True
+            }
+            success, data = self.make_request('POST', 'export', export_request, 400)
+            if not success:  # Should fail with 400
+                self.log_result("Export Error Handling (Invalid Path)", True)
+            else:
+                self.log_result("Export Error Handling (Invalid Path)", False, "Should have failed with invalid path")
+        
+        # Test 8: Reset to valid path for cleanup
+        settings_update = {
+            "export_folder_path": "/tmp/exports"
+        }
+        self.make_request('PUT', 'settings', settings_update)
 
         return True
 
