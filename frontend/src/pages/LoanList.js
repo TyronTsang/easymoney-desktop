@@ -178,7 +178,10 @@ export default function LoanList() {
     }
 
     try {
-      await api().post(`/loans/${loanId}/payments/${installmentNumber}/mark-paid`);
+      await api().post('/payments/mark-paid', {
+        loan_id: loanId,
+        installment_number: installmentNumber
+      });
       toast.success(`Payment ${installmentNumber} marked as paid`);
       fetchData();
     } catch (err) {
