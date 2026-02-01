@@ -182,7 +182,20 @@ export default function LoanList() {
       toast.success(`Payment ${installmentNumber} marked as paid`);
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to mark payment');
+      let errorMsg = 'Failed to mark payment';
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          errorMsg = detail[0]?.msg || detail[0]?.message || errorMsg;
+        } else if (typeof detail === 'string') {
+          errorMsg = detail;
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      toast.error(String(errorMsg));
     }
   };
 
