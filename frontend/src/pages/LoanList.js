@@ -132,7 +132,8 @@ export default function LoanList() {
       await api().post('/loans', {
         customer_id: customerId,
         principal_amount: parseFloat(loanForm.principal_amount),
-        repayment_plan_code: parseInt(loanForm.repayment_plan_code)
+        repayment_plan_code: parseInt(loanForm.repayment_plan_code),
+        loan_date: new Date().toISOString().split('T')[0]
       });
 
       toast.success('Loan created successfully!');
