@@ -493,12 +493,14 @@ export default function LoanList() {
                     type="number"
                     value={loanForm.principal_amount}
                     onChange={(e) => setLoanForm({...loanForm, principal_amount: e.target.value})}
-                    placeholder="e.g. 400"
-                    min="100"
+                    placeholder="Min: R400 - Max: R8000"
+                    min="400"
+                    max="8000"
                     className="bg-gray-50 font-mono"
                     data-testid="loan-amount-input"
                     required
                   />
+                  <p className="text-xs text-gray-500">Loan amount must be between R400 and R8000</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Repayment Plan *</Label>
