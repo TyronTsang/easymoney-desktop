@@ -942,7 +942,9 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
         ws = wb.active if data.export_type == "customers" else wb.create_sheet("Customers")
         ws.title = "Customers"
         
-        headers = ["ID", "Client Name", "ID Number", "Mandate ID", "Created At", "Created By"]
+        headers = ["ID", "Client Name", "ID Number", "Mandate ID", "Cell Phone", 
+                   "Total Loans", "Open Loans", "Paid Loans", "Total Borrowed", 
+                   "Total Outstanding", "Loan Status", "Created At", "Created By"]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
@@ -961,6 +963,28 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
         customers = await db.customers.find(date_query, {"_id": 0}).to_list(10000)
         for row, c in enumerate(customers, 2):
             creator = await db.users.find_one({"id": c.get("created_by")}, {"full_name": 1, "_id": 0})
+            
+            # Get all loans for this customer
+            customer_loans = await db.loans.find({"customer_id": c["id"], "archived_at": None}, {"_id": 0}).to_list(100)
+            
+            total_loans = len(customer_loans)
+            open_loans = sum(1 for loan in customer_loans if loan["status"] == "open")
+            paid_loans = sum(1 for loan in customer_loans if loan["status"] == "paid")
+            total_borrowed = sum(loan["principal_amount"] for loan in customer_loans)
+            total_outstanding = sum(loan["outstanding_balance"] for loan in customer_loans)
+            
+            # Determine loan status description
+            if total_loans == 0:
+                loan_status = "No Loans"
+            elif paid_loans == total_loans:
+                loan_status = "All Paid"
+            elif open_loans == total_loans:
+                loan_status = "All Open"
+            elif paid_loans > 0 and open_loans > 0:
+                loan_status = f"Mixed ({paid_loans} Paid, {open_loans} Open)"
+            else:
+                loan_status = "Active"
+            
             ws.cell(row=row, column=1, value=c["id"]).border = border
             ws.cell(row=row, column=2, value=c["client_name"]).border = border
             # Format ID as text to prevent scientific notation
@@ -968,12 +992,19 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
             id_cell.number_format = '@'
             id_cell.border = border
             ws.cell(row=row, column=4, value=c["mandate_id"]).border = border
-            ws.cell(row=row, column=5, value=c["created_at"]).border = border
-            ws.cell(row=row, column=6, value=creator["full_name"] if creator else "Unknown").border = border
+            ws.cell(row=row, column=5, value=c.get("cell_phone", "")).border = border
+            ws.cell(row=row, column=6, value=total_loans).border = border
+            ws.cell(row=row, column=7, value=open_loans).border = border
+            ws.cell(row=row, column=8, value=paid_loans).border = border
+            ws.cell(row=row, column=9, value=f"R{total_borrowed:.2f}").border = border
+            ws.cell(row=row, column=10, value=f"R{total_outstanding:.2f}").border = border
+            ws.cell(row=row, column=11, value=loan_status).border = border
+            ws.cell(row=row, column=12, value=c["created_at"]).border = border
+            ws.cell(row=row, column=13, value=creator["full_name"] if creator else "Unknown").border = border
         
         # Auto-width
         for col in range(1, len(headers) + 1):
-            ws.column_dimensions[get_column_letter(col)].width = 20
+            ws.column_dimensions[get_column_letter(col)].width = 18
     
     if data.export_type in ["loans", "all"]:
         ws = wb.active if data.export_type == "loans" else wb.create_sheet("Loans")
