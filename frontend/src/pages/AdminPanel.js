@@ -234,7 +234,7 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full max-w-3xl grid-cols-5">
+        <TabsList className="grid w-full max-w-4xl grid-cols-6">
           <TabsTrigger value="users" className="gap-2" data-testid="users-tab">
             <Users className="w-4 h-4" /> Users
           </TabsTrigger>
@@ -243,6 +243,9 @@ export default function AdminPanel() {
           </TabsTrigger>
           <TabsTrigger value="backup" className="gap-2" data-testid="backup-tab">
             <Database className="w-4 h-4" /> Backup
+          </TabsTrigger>
+          <TabsTrigger value="updates" className="gap-2" data-testid="updates-tab">
+            <Download className="w-4 h-4" /> Updates
           </TabsTrigger>
           <TabsTrigger value="ad" className="gap-2" data-testid="ad-tab">
             <Server className="w-4 h-4" /> AD
