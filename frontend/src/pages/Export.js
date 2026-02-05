@@ -14,8 +14,21 @@ export default function Export() {
   const [saveToPath, setSaveToPath] = useState(false);
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState('');
 
-  useEffect(() => { const fetchSettings = async () => { try { const res = await api().get('/settings'); setSettings(res.data); } catch (err) { console.error('Failed to load settings'); } }; fetchSettings(); }, [api]);
+  useEffect(() => { const fetchSettings = async () => { try { const res = await api().get('/settings'); setSettings(res.data); setSelectedFolder(res.data.export_folder_path || ''); } catch (err) { console.error('Failed to load settings'); } }; fetchSettings(); }, [api]);
+
+  const handleSelectFolder = async () => {
+    if (window.electronAPI?.selectFolder) {
+      const folder = await window.electronAPI.selectFolder();
+      if (folder) {
+        setSelectedFolder(folder);
+        setSaveToPath(true);
+      }
+    } else {
+      toast.error('Folder selection only available in desktop app');
+    }
+  };
 
   const handleExport = async () => {
     setLoading(true);
