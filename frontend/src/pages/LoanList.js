@@ -50,6 +50,7 @@ export default function LoanList() {
     client_name: '',
     id_number: '',
     mandate_id: '',
+    cell_phone: '',
     sassa_end_date: '',
     // Loan fields
     principal_amount: '',
