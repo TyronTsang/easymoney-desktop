@@ -603,6 +603,12 @@ export default function AdminPanel() {
         </TabsContent>
 
         {/* Active Directory Tab */}
+
+        {/* Updates Tab */}
+        <TabsContent value="updates" className="mt-6">
+          <UpdatesManager />
+        </TabsContent>
+
         <TabsContent value="ad" className="mt-6">
           <Card className="border-border max-w-2xl">
             <CardHeader>
