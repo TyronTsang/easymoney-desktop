@@ -1,9 +1,15 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const Database = require('./database');
+const AppUpdater = require('./updater');
 
 let mainWindow;
 let db;
+let updater;
+
+// App version and GitHub repo - UPDATE THESE!
+const APP_VERSION = '1.0.0';
+const GITHUB_REPO = 'yourusername/easymoney-desktop'; // Change this to your GitHub repo
 
 // Get the correct path for resources in both dev and production
 function getResourcePath() {
