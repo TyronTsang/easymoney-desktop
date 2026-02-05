@@ -50,6 +50,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Dialogs
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
   
+  // App Updates
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
+  checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+  downloadUpdate: (downloadUrl) => ipcRenderer.invoke('app:downloadUpdate', downloadUrl),
+  installUpdate: (filePath) => ipcRenderer.invoke('app:installUpdate', filePath),
+  onDownloadProgress: (callback) => {
+    ipcRenderer.on('update:downloadProgress', (event, progress) => callback(progress));
+  },
+  
   // Platform info
   platform: process.platform,
   isElectron: true
