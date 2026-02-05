@@ -147,16 +147,4 @@ ipcMain.handle('app:installUpdate', async (event, filePath) => {
   return db.exportToExcel(exportType, exportPath, userId);
 });
 
-// Select folder dialog
-ipcMain.handle('dialog:selectFolder', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory'],
-    title: 'Select Export Folder'
-  });
-  
-  if (result.canceled) {
-    return null;
-  }
-  
-  return result.filePaths[0];
-});
+// End of file
