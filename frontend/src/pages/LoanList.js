@@ -476,15 +476,20 @@ export default function LoanList() {
                   </div>
                   <div className="space-y-2">
                     <Label>SA ID Number *</Label>
-                    <Input
-                      value={loanForm.id_number}
-                      onChange={(e) => setLoanForm({...loanForm, id_number: e.target.value})}
-                      placeholder="13-digit ID"
-                      maxLength={13}
-                      className="bg-gray-50 font-mono"
-                      data-testid="id-number-input"
-                      required={!useExistingCustomer}
-                    />
+                    <div className="relative">
+                      <Input
+                        value={loanForm.id_number}
+                        onChange={(e) => setLoanForm({...loanForm, id_number: e.target.value})}
+                        placeholder="13-digit ID"
+                        maxLength={13}
+                        className="bg-gray-50 font-mono pr-16"
+                        data-testid="id-number-input"
+                        required={!useExistingCustomer}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">
+                        {loanForm.id_number.length}/13
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Mandate ID *</Label>
