@@ -112,9 +112,9 @@ export default function Export() {
             )}
           </div>
 
-          {saveToPath && !settings.export_folder_path && <Alert className="border-amber-500/20 bg-amber-500/10"><AlertCircle className="h-4 w-4 text-amber-500" /><AlertDescription className="text-sm text-amber-200/80">Export folder not configured. Please configure in Admin Panel → Settings.</AlertDescription></Alert>}
+          {saveToPath && !selectedFolder && <Alert className="border-amber-500/20 bg-amber-500/10"><AlertCircle className="h-4 w-4 text-amber-500" /><AlertDescription className="text-sm text-amber-200/80">Please select an export folder above.</AlertDescription></Alert>}
 
-          <Button onClick={handleExport} disabled={loading || (saveToPath && !settings.export_folder_path)} className="w-full gap-2 bg-red-600 hover:bg-red-700" data-testid="export-btn"><Download className="w-4 h-4" />{loading ? 'Exporting...' : saveToPath ? 'Save to Folder' : 'Download Export'}</Button>
+          <Button onClick={handleExport} disabled={loading || (saveToPath && !selectedFolder)} className="w-full gap-2 bg-red-600 hover:bg-red-700" data-testid="export-btn"><Download className="w-4 h-4" />{loading ? 'Exporting...' : saveToPath ? 'Save to Folder' : 'Download Export'}</Button>
         </CardContent>
       </Card>
     </div>
