@@ -135,16 +135,4 @@ ipcMain.handle('app:installUpdate', async (event, filePath) => {
   }
 });
 
-    });
-    
-    if (result.canceled) {
-      return { success: false, error: 'Export cancelled' };
-    }
-    
-    return db.exportToExcel(exportType, result.filePaths[0], userId);
-  }
-  
-  return db.exportToExcel(exportType, exportPath, userId);
-});
-
 // End of file
