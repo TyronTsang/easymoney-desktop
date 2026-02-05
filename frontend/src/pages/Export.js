@@ -100,15 +100,21 @@ export default function Export() {
               />
             </div>
             
-            {window.electronAPI?.isElectron && (
-              <Button
-                variant="outline"
-                onClick={handleSelectFolder}
-                className="w-full gap-2"
-              >
-                <FolderOpen className="w-4 h-4" />
-                {selectedFolder ? 'Change Folder' : 'Select Export Folder'}
-              </Button>
+            <Button
+              variant="outline"
+              onClick={handleSelectFolder}
+              className="w-full gap-2"
+              disabled={!window.electronAPI?.isElectron}
+            >
+              <FolderOpen className="w-4 h-4" />
+              {selectedFolder ? 'Change Folder' : 'Select Export Folder'}
+            </Button>
+            
+            {!window.electronAPI?.isElectron && (
+              <p className="text-xs text-amber-500 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Folder selection only available in desktop app (currently in web preview)
+              </p>
             )}
           </div>
 
