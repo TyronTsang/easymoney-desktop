@@ -55,9 +55,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  // Initialize database
-  db = new Database();
-  
   // Initialize updater
   updater = new AppUpdater(APP_VERSION, GITHUB_REPO);
   
