@@ -198,6 +198,17 @@ ipcMain.handle('db:exportData', async (event, exportType, userId) => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory'],
       title: 'Select Export Folder'
+    });
+    
+    if (result.canceled || !result.filePaths.length) {
+      return null;
+    }
+    
+    return result.filePaths[0];
+  }
+  
+  return exportPath;
+});
 
 // ==================== UPDATE HANDLERS ====================
 
