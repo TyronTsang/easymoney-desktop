@@ -949,7 +949,16 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
             cell.fill = header_fill
             cell.border = border
         
-        customers = await db.customers.find({"archived_at": None}, {"_id": 0}).to_list(10000)
+        # Build date filter query
+        date_query = {"archived_at": None}
+        if data.date_from or data.date_to:
+            date_query["created_at"] = {}
+            if data.date_from:
+                date_query["created_at"]["$gte"] = f"{data.date_from}T00:00:00"
+            if data.date_to:
+                date_query["created_at"]["$lte"] = f"{data.date_to}T23:59:59"
+        
+        customers = await db.customers.find(date_query, {"_id": 0}).to_list(10000)
         for row, c in enumerate(customers, 2):
             creator = await db.users.find_one({"id": c.get("created_by")}, {"full_name": 1, "_id": 0})
             ws.cell(row=row, column=1, value=c["id"]).border = border
