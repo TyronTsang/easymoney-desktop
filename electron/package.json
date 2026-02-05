@@ -31,21 +31,11 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": ["x64"]
-        },
-        {
           "target": "portable",
           "arch": ["x64"]
         }
       ],
       "icon": "icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "icon.ico",
-      "uninstallerIcon": "icon.ico"
     },
     "files": [
       "main.js",
@@ -53,8 +43,7 @@
       "database.js",
       "updater.js",
       "package.json",
-      "node_modules/better-sqlite3/**/*",
-      "node_modules/exceljs/**/*"
+      "node_modules/**/*"
     ],
     "extraResources": [
       {
