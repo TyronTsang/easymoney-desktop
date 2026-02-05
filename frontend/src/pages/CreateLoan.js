@@ -255,12 +255,8 @@ export default function CreateLoan() {
                     <span className="font-mono">R{calculation.principal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Interest (40%)</span>
-                    <span className="font-mono">R{calculation.interest.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Service Fee</span>
-                    <span className="font-mono">R{calculation.serviceFee.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Fees & Charges</span>
+                    <span className="font-mono">R{(calculation.interest + calculation.serviceFee).toFixed(2)}</span>
                   </div>
                   <div className="border-t border-red-500/20 pt-2 mt-2">
                     <div className="flex justify-between font-medium">
