@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -6,8 +6,85 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AuthContext = createContext(null);
 
 // Detect Electron environment
-const isElectron = () => window.electronAPI !== undefined;
+const isElectron = () => typeof window !== 'undefined' && window.electronAPI !== undefined;
 const electronAPI = typeof window !== 'undefined' ? window.electronAPI : null;
+
+// Electron IPC proxy - maps axios-style calls to IPC calls
+function createElectronApiProxy(getUserId) {
+  const routeHandlers = {
+    'GET:/master-password/status': () => electronAPI.checkMasterPassword(),
+    'GET:/dashboard/stats': () => electronAPI.getDashboardStats(),
+    'GET:/loans': (params) => electronAPI.getLoans(params?.status || params?.loan_status),
+    'GET:/customers': () => electronAPI.getCustomers(),
+    'GET:/users': () => electronAPI.getUsers(),
+    'GET:/settings': () => electronAPI.getSettings(),
+    'GET:/audit-logs': (params) => electronAPI.getAuditLogs(params || {}),
+    'GET:/audit-logs/verify-integrity': () => electronAPI.verifyAuditIntegrity(),
+    'GET:/auth/me': () => {
+      const stored = localStorage.getItem('electronUser');
+      return stored ? JSON.parse(stored) : null;
+    },
+    'GET:/backup/status': () => ({ backup_folder_path: '', auto_backup_enabled: false, last_backup: null }),
+    'GET:/settings/ad-config': () => ({ enabled: false, ldap_available: false }),
+    'POST:/master-password/setup': (data) => electronAPI.setupMasterPassword(data.password),
+    'POST:/master-password/verify': (data) => electronAPI.verifyMasterPassword(data.password),
+    'POST:/auth/login': (data) => electronAPI.login(data.username, data.password),
+    'POST:/customers': (data) => electronAPI.createCustomer(data, getUserId()),
+    'POST:/loans': (data) => electronAPI.createLoan(data, getUserId()),
+    'POST:/payments/mark-paid': (data) => electronAPI.markPaymentPaid(data.loan_id, data.installment_number, getUserId()),
+    'POST:/users': (data) => electronAPI.createUser(data),
+    'POST:/export': (data) => electronAPI.exportData(data.export_type, getUserId()),
+    'POST:/archive': (data) => electronAPI.archiveEntity(data.entity_type, data.entity_id, data.reason, getUserId()),
+    'POST:/backup/create': () => ({ success: false, message: 'Use Electron export dialog' }),
+    'POST:/settings/ad-config/test': () => ({ success: false, message: 'AD not available in offline mode' }),
+    'PUT:/settings': (data) => electronAPI.updateSettings(data),
+    'PUT:/settings/ad-config': () => ({ message: 'AD not available in offline mode' }),
+    'PUT:/backup/config': () => ({ message: 'Backup config saved' }),
+  };
+
+  // Dynamic route matching (for routes with parameters)
+  const dynamicHandlers = [
+    { pattern: /^GET:\/loans\/(.+)$/, handler: (m) => electronAPI.getLoan(m[1]) },
+    { pattern: /^GET:\/customers\/(.+)$/, handler: (m) => electronAPI.getCustomer(m[1]) },
+    { pattern: /^PUT:\/users\/(.+)\/toggle-active$/, handler: (m) => electronAPI.toggleUserActive(m[1]) },
+  ];
+
+  const resolveHandler = (method, url, data, params) => {
+    const key = `${method}:${url}`;
+    if (routeHandlers[key]) {
+      return routeHandlers[key](data || params);
+    }
+    for (const { pattern, handler } of dynamicHandlers) {
+      const match = key.match(pattern);
+      if (match) return handler(match, data);
+    }
+    console.warn(`[ElectronProxy] No handler for ${key}`);
+    return Promise.resolve(null);
+  };
+
+  return {
+    get: async (url, config) => {
+      const data = await resolveHandler('GET', url, null, config?.params);
+      return { data };
+    },
+    post: async (url, data) => {
+      const result = await resolveHandler('POST', url, data);
+      return { data: result };
+    },
+    put: async (url, data, config) => {
+      const result = await resolveHandler('PUT', url, data);
+      return { data: result };
+    },
+    patch: async (url, data) => {
+      const result = await resolveHandler('PUT', url, data);
+      return { data: result };
+    },
+    delete: async (url) => {
+      const result = await resolveHandler('DELETE', url);
+      return { data: result };
+    }
+  };
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -23,13 +100,24 @@ export const AuthProvider = ({ children }) => {
   const [isAppUnlocked, setIsAppUnlocked] = useState(localStorage.getItem('appUnlocked') === 'true');
   const [masterPasswordSet, setMasterPasswordSet] = useState(null);
   const [loading, setLoading] = useState(true);
+  const userRef = useRef(null);
+
+  // Keep userRef in sync
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const getUserId = useCallback(() => userRef.current?.id || '', []);
 
   const api = useCallback(() => {
+    if (isElectron()) {
+      return createElectronApiProxy(getUserId);
+    }
     return axios.create({
       baseURL: API,
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
-  }, [token]);
+  }, [token, getUserId]);
 
   // Check master password status on mount
   useEffect(() => {
@@ -50,11 +138,10 @@ export const AuthProvider = ({ children }) => {
     checkMasterPassword();
   }, []);
 
-  // Verify token on mount (web mode only)
+  // Verify token on mount
   useEffect(() => {
     const verifyToken = async () => {
       if (isElectron()) {
-        // In Electron mode, user is stored in state, no token verification needed
         const storedUser = localStorage.getItem('electronUser');
         if (storedUser && isAppUnlocked) {
           setUser(JSON.parse(storedUser));
@@ -74,7 +161,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     verifyToken();
-  }, [token, isAppUnlocked, api]);
+  }, [token, isAppUnlocked]);
 
   const setupMasterPassword = async (password) => {
     if (isElectron()) {
