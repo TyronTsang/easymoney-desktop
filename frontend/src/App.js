@@ -82,14 +82,17 @@ function AppRoutes() {
   );
 }
 
+const isElectron = window.electronAPI !== undefined;
+const Router = isElectron ? HashRouter : BrowserRouter;
+
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <AppRoutes />
         <Toaster position="top-right" richColors />
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
 
