@@ -335,14 +335,14 @@ class EasyMoneyLoansAPITester:
         return True
 
     def test_payment_management(self):
-        """Test payment marking functionality"""
+        """Test payment marking functionality with comprehensive validation"""
         print("\n💳 Testing Payment Management...")
         
         if not self.test_loan_id:
             self.log_result("Payment Management", False, "No test loan available")
             return False
 
-        # Mark first payment as paid
+        # Mark first payment as paid (installment_number: 1)
         payment_request = {
             "loan_id": self.test_loan_id,
             "installment_number": 1
@@ -350,19 +350,19 @@ class EasyMoneyLoansAPITester:
         
         success, data = self.make_request('POST', 'payments/mark-paid', payment_request)
         if success:
-            self.log_result("Mark Payment as Paid", True)
+            self.log_result("Mark Payment 1 as Paid", True)
             
-            # Verify payment immutability - try to mark same payment again
+            # Verify payment cannot be unmarked (should error)
             success, data = self.make_request('POST', 'payments/mark-paid', payment_request, 400)
             if not success:  # Should fail with 400
-                self.log_result("Payment Immutability", True)
+                self.log_result("Payment Immutability (Cannot Unmark)", True)
             else:
-                self.log_result("Payment Immutability", False, "Payment was marked paid twice")
+                self.log_result("Payment Immutability (Cannot Unmark)", False, "Payment was marked paid twice")
         else:
-            self.log_result("Mark Payment as Paid", False, str(data))
+            self.log_result("Mark Payment 1 as Paid", False, str(data))
             return False
 
-        # Verify loan balance update
+        # Verify loan balance is reduced after first payment
         success, loan_data = self.make_request('GET', f'loans/{self.test_loan_id}')
         if success:
             original_total = loan_data.get('total_repayable', 0)
@@ -371,12 +371,43 @@ class EasyMoneyLoansAPITester:
             
             expected_outstanding = original_total - installment
             if abs(outstanding - expected_outstanding) < 0.01:
-                self.log_result("Loan Balance Update", True)
+                self.log_result("Outstanding Balance Reduced", True)
             else:
-                self.log_result("Loan Balance Update", False, 
+                self.log_result("Outstanding Balance Reduced", False, 
                               f"Expected outstanding: {expected_outstanding}, got: {outstanding}")
         else:
-            self.log_result("Loan Balance Update", False, "Could not fetch updated loan")
+            self.log_result("Outstanding Balance Check", False, "Could not fetch updated loan")
+
+        # Mark remaining payments sequentially (2, 3, 4)
+        for installment_num in [2, 3, 4]:
+            payment_request = {
+                "loan_id": self.test_loan_id,
+                "installment_number": installment_num
+            }
+            
+            success, data = self.make_request('POST', 'payments/mark-paid', payment_request)
+            if success:
+                self.log_result(f"Mark Payment {installment_num} as Paid", True)
+            else:
+                self.log_result(f"Mark Payment {installment_num} as Paid", False, str(data))
+
+        # Verify loan status changes to "paid" and outstanding balance becomes 0
+        success, final_loan_data = self.make_request('GET', f'loans/{self.test_loan_id}')
+        if success:
+            loan_status = final_loan_data.get('status')
+            outstanding_balance = final_loan_data.get('outstanding_balance', 0)
+            
+            if loan_status == 'paid':
+                self.log_result("Loan Status Changed to Paid", True)
+            else:
+                self.log_result("Loan Status Changed to Paid", False, f"Expected 'paid', got '{loan_status}'")
+            
+            if abs(outstanding_balance) < 0.01:  # Should be 0 or very close
+                self.log_result("Outstanding Balance Becomes Zero", True)
+            else:
+                self.log_result("Outstanding Balance Becomes Zero", False, f"Outstanding balance: {outstanding_balance}")
+        else:
+            self.log_result("Final Loan Status Check", False, "Could not fetch final loan state")
 
         return True
 
