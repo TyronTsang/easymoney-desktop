@@ -37,11 +37,6 @@ export default function LoginScreen() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{
       background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%)'
     }}>
-      {/* Back to website link */}
-      <a href="#" className="absolute top-6 left-6 text-white/90 hover:text-white flex items-center gap-2 text-sm font-medium">
-        <ArrowLeft className="w-4 h-4" />
-        Back to website
-      </a>
 
       <Card className="w-full max-w-md shadow-2xl border-0">
         <CardHeader className="text-center space-y-4 pt-8">
