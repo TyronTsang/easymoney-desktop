@@ -787,6 +787,7 @@ class EasyMoneyLoansAPITester:
             self.test_customer_management,
             self.test_loan_management,
             self.test_payment_management,
+            self.test_comprehensive_validation,
             self.test_fraud_detection,
             self.test_user_management,
             self.test_export_functionality,
