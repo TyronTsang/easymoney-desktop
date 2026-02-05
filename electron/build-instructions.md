@@ -1,146 +1,108 @@
-# EasyMoneyLoans Desktop Application - Build Instructions
+# EasyMoneyLoans Desktop - Windows Build Guide
 
 ## Prerequisites
 
-1. **Node.js 18+** - Download from https://nodejs.org/
-2. **Windows 10/11** - The build must be performed on a Windows machine
-3. **Git** (optional) - For cloning the repository
+### 1. Install Visual Studio Build Tools (REQUIRED for SQLite)
+- Download from: https://visualstudio.microsoft.com/downloads/
+- Scroll to "Build Tools for Visual Studio 2022" → Click Download
+- Run the installer
+- Select **"Desktop development with C++"** workload
+- Click Install (takes 10-20 minutes)
+- **Restart your computer** after installation
 
-## Directory Structure
+### 2. Install Node.js
+- Download LTS from: https://nodejs.org/
+- During install, check "Automatically install necessary tools" 
+
+### 3. Verify Installation
+Open Command Prompt and run:
 ```
-/app/
-├── electron/           # Electron configuration and build files
-│   ├── main.js         # Main Electron process
-│   ├── preload.js      # Secure IPC bridge
-│   ├── database.js     # SQLite database handler
-│   └── package.json    # Electron dependencies
-└── frontend/           # React frontend application
-    └── build/          # Production build (created during build process)
+node --version     # Should show v18+ or v20+
+npm --version      # Should show 9+
 ```
 
 ## Build Steps
 
-### Step 1: Build the React Frontend
+### Step 1: Clone or download the repository
+```
+git clone https://github.com/TyronTsang/easymoney-desktop.git
+cd easymoney-desktop
+```
 
-Open Command Prompt or PowerShell and navigate to the frontend directory:
-
-```bash
+### Step 2: Build the React frontend
+```
 cd frontend
 npm install
 npm run build
+cd ..
 ```
 
-This creates the `frontend/build/` folder with the production-ready React app.
-
-### Step 2: Prepare Electron Dependencies
-
-Navigate to the electron directory:
-
-```bash
-cd ../electron
+### Step 3: Install Electron dependencies (including SQLite)
+```
+cd electron
 npm install
 ```
 
-This installs Electron and its dependencies (better-sqlite3, exceljs).
+**If `better-sqlite3` fails to compile:**
+```
+npm install --build-from-source
+```
 
-### Step 3: Build the Windows Executable
+Or try:
+```
+npx electron-rebuild -f -w better-sqlite3
+```
 
-Still in the electron directory, run:
+### Step 4: Test in development mode
+```
+npm start
+```
+This opens the app in development mode. Verify:
+- Master password screen appears
+- Can set/enter master password
+- Can login with admin/admin123
+- Can create customers and loans
 
-```bash
-# For installer version (.exe installer)
+### Step 5: Build the .EXE
+```
 npm run build
-
-# For portable version (single .exe file)
-npm run build:portable
-
-# For quick testing (unpacked directory)
-npm run build:dir
 ```
 
-### Step 4: Find Your Built Application
+The installer will be in `electron/dist/`. Look for:
+- `EasyMoneyLoans Setup 1.0.0.exe` (NSIS installer)
+- `EasyMoneyLoans 1.0.0.exe` (Portable version)
 
-After successful build, find your files in:
+## Architecture
+
 ```
-electron/dist/
-├── EasyMoneyLoans Setup 1.0.0.exe    # NSIS Installer
-├── EasyMoneyLoans 1.0.0.exe          # Portable executable
-└── win-unpacked/                      # Unpacked application directory
-    └── EasyMoneyLoans.exe            # The main executable
+User clicks button in UI
+  → React component calls window.electronAPI.method()
+  → preload.js bridges to ipcRenderer.invoke('db:method')
+  → main.js IPC handler calls database.method()
+  → database.js executes SQL on local SQLite file
+  → Result flows back through the chain to the UI
 ```
 
-## First-Time Setup
-
-1. Run the application
-2. Create a **Master Password** - This encrypts all local data
-3. Login with default credentials:
-   - Username: `admin`
-   - Password: `admin123`
-4. **IMPORTANT**: Change the admin password immediately after first login!
-
-## Application Features
-
-### Security
-- **Master Password Protection**: All data is encrypted with your master password
-- **Local SQLite Database**: No cloud dependency, fully offline
-- **Payment Immutability**: Paid payments cannot be unmarked
-- **Audit Log Integrity**: SHA-256 hash chain for tamper detection
-- **Role-Based Access**: Employee/Manager/Admin roles
-
-### Functionality
-- Customer management with SA ID validation
-- Loan creation with automatic interest calculation (40% + R12 fee)
-- Payment scheduling (Monthly/Fortnightly/Weekly)
-- Fraud detection (Quick-close alerts, Duplicate customer alerts)
-- Excel export to any folder
-- Complete audit trail
+**Database location:** `C:\Users\{user}\AppData\Local\EasyMoneyLoans\easymoney.db`
 
 ## Troubleshooting
 
-### Native Module Issues
-If you encounter errors with `better-sqlite3`:
+### "better-sqlite3 failed to compile"
+1. Make sure Visual Studio Build Tools WITH C++ workload is installed
+2. Restart your computer after installing Build Tools
+3. Try: `npm install --build-from-source`
+4. If still failing, try: `npx electron-rebuild -f -w better-sqlite3`
 
-```bash
-# In the electron directory
-npm rebuild better-sqlite3 --runtime=electron --target=28.0.0 --disturl=https://electronjs.org/headers --abi=119
-```
+### App crashes on startup
+Check logs in: `%APPDATA%\EasyMoneyLoans\logs\`
 
-### Build Fails
-1. Delete `node_modules` in both directories
-2. Delete `package-lock.json` files
-3. Run `npm install` again in both directories
-4. Try the build again
+### Data not persisting
+Check if the database file exists at:
+`C:\Users\{username}\AppData\Local\EasyMoneyLoans\easymoney.db`
 
-### Application Won't Start
-Check the Windows Event Viewer for error details, or run from command line:
-```bash
-"electron/dist/win-unpacked/EasyMoneyLoans.exe"
-```
-
-## Data Location
-
-The SQLite database is stored at:
-```
-%APPDATA%/easymoney-desktop/easymoney.db
-```
-
-To back up your data, copy this file to a secure location.
-
-## Code Signing (Recommended for Production)
-
-For production deployment, code sign the executable:
-
-1. Obtain a Code Signing Certificate from a trusted CA (DigiCert, Sectigo, etc.)
-2. Add to your `package.json`:
-```json
-"build": {
-  "win": {
-    "certificateFile": "path/to/certificate.pfx",
-    "certificatePassword": "your-password"
-  }
-}
-```
-
-## Support
-
-For issues and questions, contact the IT department.
+## Key Files
+- `electron/main.js` - Main process with all IPC handlers
+- `electron/database.js` - SQLite database operations
+- `electron/preload.js` - Secure bridge between main and renderer
+- `electron/updater.js` - Auto-update from GitHub Releases
+- `frontend/` - React UI (built to frontend/build/)
