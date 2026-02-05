@@ -104,6 +104,7 @@ class CustomerCreate(BaseModel):
     client_name: str
     id_number: str
     mandate_id: str
+    cell_phone: Optional[str] = None
     
     @field_validator('id_number')
     @classmethod
