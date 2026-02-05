@@ -90,9 +90,9 @@ export default function LoanDetails() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><p className="text-sm text-muted-foreground">Principal</p><p className="font-mono font-medium">R{loan.principal_amount.toFixed(2)}</p></div>
-              <div><p className="text-sm text-muted-foreground">Interest (40%)</p><p className="font-mono font-medium">R{(loan.principal_amount * 0.4).toFixed(2)}</p></div>
-              <div><p className="text-sm text-muted-foreground">Service Fee</p><p className="font-mono font-medium">R{loan.service_fee.toFixed(2)}</p></div>
+              <div><p className="text-sm text-muted-foreground">Fees & Charges</p><p className="font-mono font-medium">R{((loan.principal_amount * 0.4) + loan.service_fee).toFixed(2)}</p></div>
               <div><p className="text-sm text-muted-foreground">Total Repayable</p><p className="font-mono font-medium text-red-500">R{loan.total_repayable.toFixed(2)}</p></div>
+              <div><p className="text-sm text-muted-foreground">Outstanding Balance</p><p className="font-mono font-medium text-amber-500">R{loan.outstanding_balance.toFixed(2)}</p></div>
             </div>
             <div className="pt-2 border-t border-border"><p className="text-sm text-muted-foreground">Outstanding Balance</p><p className="font-mono text-xl font-bold text-amber-500">R{loan.outstanding_balance.toFixed(2)}</p></div>
           </CardContent>
