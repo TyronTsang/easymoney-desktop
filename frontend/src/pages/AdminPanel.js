@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Switch } from '../components/ui/switch';
 import { Settings, Users, FolderOpen, Shield, Plus, UserCheck, UserX, CheckCircle, XCircle, Server, Wifi, WifiOff, AlertCircle, Loader2, Database, HardDrive, Clock, FileJson, Download, Upload } from 'lucide-react';
+import UpdatesManager from '../components/UpdatesManager';
 
 export default function AdminPanel() {
   const { api } = useAuth();
