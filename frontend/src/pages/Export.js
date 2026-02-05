@@ -81,8 +81,35 @@ export default function Export() {
 
           <div className="p-4 rounded-lg bg-secondary/50 border border-border"><p className="text-sm text-muted-foreground mb-2">Export Details</p><ul className="text-sm space-y-1"><li>• File format: Excel (.xlsx)</li><li>• Filename: Loans_{new Date().toISOString().split('T')[0]}_{user?.branch?.replace(/\s/g, '_')}.xlsx</li><li>• SA ID numbers formatted as text (prevents scientific notation)</li><li>• Includes Created By, Paid By, and timestamps</li></ul></div>
 
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <div className="flex items-center justify-between"><div className="flex items-center gap-3"><FolderOpen className="w-5 h-5 text-red-500" /><div><p className="font-medium">Save to Dropbox Folder</p><p className="text-xs text-muted-foreground">{settings.export_folder_path ? `Save directly to: ${settings.export_folder_path}` : 'No export folder configured'}</p></div></div><Switch checked={saveToPath} onCheckedChange={setSaveToPath} disabled={!settings.export_folder_path} data-testid="save-to-path-switch" /></div>
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FolderOpen className="w-5 h-5 text-red-500" />
+                <div>
+                  <p className="font-medium">Save to Folder</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedFolder ? `${selectedFolder}` : 'Select a folder to save exports'}
+                  </p>
+                </div>
+              </div>
+              <Switch 
+                checked={saveToPath} 
+                onCheckedChange={setSaveToPath} 
+                disabled={!selectedFolder} 
+                data-testid="save-to-path-switch" 
+              />
+            </div>
+            
+            {window.electronAPI?.isElectron && (
+              <Button
+                variant="outline"
+                onClick={handleSelectFolder}
+                className="w-full gap-2"
+              >
+                <FolderOpen className="w-4 h-4" />
+                {selectedFolder ? 'Change Folder' : 'Select Export Folder'}
+              </Button>
+            )}
           </div>
 
           {saveToPath && !settings.export_folder_path && <Alert className="border-amber-500/20 bg-amber-500/10"><AlertCircle className="h-4 w-4 text-amber-500" /><AlertDescription className="text-sm text-amber-200/80">Export folder not configured. Please configure in Admin Panel → Settings.</AlertDescription></Alert>}
