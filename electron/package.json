@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "EasyMoneyLoans Secure Desktop Application",
   "main": "main.js",
+  "type": "commonjs",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win portable",
