@@ -71,6 +71,20 @@ app.on('window-all-closed', () => {
 
 // ==================== IPC HANDLERS ====================
 
+// Folder Selection Dialog
+ipcMain.handle('dialog:selectFolder', async (event, defaultPath) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+    defaultPath: defaultPath || '',
+    title: 'Select Export Folder'
+  });
+  
+  if (result.canceled) {
+    return null;
+  }
+  return result.filePaths[0];
+});
+
 // Master Password
 ipcMain.handle('db:checkMasterPassword', async () => {
   return db.checkMasterPasswordSet();
