@@ -144,22 +144,29 @@ class EasyMoneyLoansAPITester:
             return False
 
     def test_customer_management(self):
-        """Test customer CRUD operations"""
+        """Test customer CRUD operations including new cell_phone field"""
         print("\n👥 Testing Customer Management...")
         
-        # Test valid SA ID (using Luhn algorithm valid ID)
-        timestamp = datetime.now().strftime("%H%M%S")
+        # Test customer creation with cell_phone field as per review request
         test_customer = {
-            "client_name": f"Test Customer {timestamp}",
-            "id_number": "8001015009087",  # Valid SA ID
-            "mandate_id": f"TEST{timestamp}"
+            "client_name": "Test Customer Final",
+            "id_number": "9001015009087",  # Valid SA ID from review request
+            "mandate_id": "M999",
+            "cell_phone": "0821234567",  # NEW field - must work
+            "sassa_end_date": "2026-12-31"
         }
         
-        # Create customer
+        # Create customer with cell_phone
         success, data = self.make_request('POST', 'customers', test_customer, 200)
         if success and data.get('id'):
             self.test_customer_id = data['id']
-            self.log_result("Create Customer", True)
+            self.log_result("Create Customer with Cell Phone", True)
+            
+            # Verify cell_phone field is stored
+            if data.get('cell_phone') == test_customer['cell_phone']:
+                self.log_result("Cell Phone Field Storage", True)
+            else:
+                self.log_result("Cell Phone Field Storage", False, f"Expected {test_customer['cell_phone']}, got {data.get('cell_phone')}")
             
             # Verify ID masking for admin (should see full ID)
             if data.get('id_number') == test_customer['id_number']:
@@ -167,21 +174,27 @@ class EasyMoneyLoansAPITester:
             else:
                 self.log_result("Admin ID Visibility", False, "Admin should see full ID")
         else:
-            self.log_result("Create Customer", False, str(data))
+            self.log_result("Create Customer with Cell Phone", False, str(data))
             return False
 
-        # Test invalid SA ID
+        # Test invalid SA ID validation as per review request
         invalid_customer = {
             "client_name": "Invalid Customer",
             "id_number": "1234567890123",  # Invalid SA ID
-            "mandate_id": "INVALID001"
+            "mandate_id": "INVALID001",
+            "cell_phone": "0821234567"
         }
         
         success, data = self.make_request('POST', 'customers', invalid_customer, 422)
         if not success:  # Should fail with 422
-            self.log_result("SA ID Validation", True)
+            self.log_result("SA ID Validation (Invalid)", True)
+            # Verify error message is a string, not an object
+            if isinstance(data.get('detail'), str):
+                self.log_result("Error Message Format (String)", True)
+            else:
+                self.log_result("Error Message Format (String)", False, f"Error message is not string: {type(data.get('detail'))}")
         else:
-            self.log_result("SA ID Validation", False, "Invalid SA ID was accepted")
+            self.log_result("SA ID Validation (Invalid)", False, "Invalid SA ID was accepted")
 
         # List customers
         success, data = self.make_request('GET', 'customers')
