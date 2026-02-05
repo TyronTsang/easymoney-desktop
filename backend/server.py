@@ -1033,7 +1033,17 @@ async def export_data(data: ExportRequest, user: dict = Depends(require_role(Use
             cell.fill = header_fill
             cell.border = border
         
-        payments = await db.payments.find({}, {"_id": 0}).to_list(50000)
+        # Build date filter query for payments (filter by paid_at date)
+        payments_query = {}
+        if data.date_from or data.date_to:
+            payments_query["paid_at"] = {"$ne": None}
+            if data.date_from:
+                if "$gte" not in payments_query["paid_at"]:
+                    payments_query["paid_at"]["$gte"] = f"{data.date_from}T00:00:00"
+            if data.date_to:
+                payments_query["paid_at"]["$lte"] = f"{data.date_to}T23:59:59"
+        
+        payments = await db.payments.find(payments_query, {"_id": 0}).to_list(50000)
         for row, p in enumerate(payments, 2):
             payer = None
             if p.get("paid_by"):
