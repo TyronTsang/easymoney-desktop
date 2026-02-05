@@ -11,10 +11,13 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 export default function Export() {
   const { api, user } = useAuth();
   const [exportType, setExportType] = useState('all');
+  const [dateRange, setDateRange] = useState('today'); // New: date range filter
   const [saveToPath, setSaveToPath] = useState(false);
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState('');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
 
   useEffect(() => { const fetchSettings = async () => { try { const res = await api().get('/settings'); setSettings(res.data); setSelectedFolder(res.data.export_folder_path || ''); } catch (err) { console.error('Failed to load settings'); } }; fetchSettings(); }, [api]);
 
@@ -30,10 +33,55 @@ export default function Export() {
     }
   };
 
+  const getDateRangeForExport = () => {
+    const today = new Date();
+    let dateFrom = null;
+    let dateTo = today.toISOString().split('T')[0];
+
+    switch(dateRange) {
+      case 'today':
+        dateFrom = today.toISOString().split('T')[0];
+        break;
+      case 'week':
+        const weekAgo = new Date(today);
+        weekAgo.setDate(today.getDate() - 7);
+        dateFrom = weekAgo.toISOString().split('T')[0];
+        break;
+      case 'month':
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(today.getMonth() - 1);
+        dateFrom = monthAgo.toISOString().split('T')[0];
+        break;
+      case 'custom':
+        dateFrom = customDateFrom;
+        dateTo = customDateTo;
+        break;
+      case 'all':
+        dateFrom = null;
+        dateTo = null;
+        break;
+    }
+
+    return { dateFrom, dateTo };
+  };
+
   const handleExport = async () => {
+    if (dateRange === 'custom' && (!customDateFrom || !customDateTo)) {
+      toast.error('Please select both start and end dates');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await api().post('/export', { export_type: exportType, save_to_path: saveToPath });
+      const { dateFrom, dateTo } = getDateRangeForExport();
+      
+      const res = await api().post('/export', { 
+        export_type: exportType, 
+        save_to_path: saveToPath,
+        date_from: dateFrom,
+        date_to: dateTo
+      });
+      
       if (res.data.saved_to_path) { toast.success(res.data.message); } 
       else {
         const byteCharacters = atob(res.data.data);
