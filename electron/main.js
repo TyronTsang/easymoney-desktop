@@ -198,6 +198,51 @@ ipcMain.handle('db:exportData', async (event, exportType, userId) => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory'],
       title: 'Select Export Folder'
+
+// ==================== UPDATE HANDLERS ====================
+
+// Get current app version
+ipcMain.handle('app:getVersion', async () => {
+  return APP_VERSION;
+});
+
+// Check for updates
+ipcMain.handle('app:checkForUpdates', async () => {
+  try {
+    const updateInfo = await updater.checkForUpdates();
+    return { success: true, data: updateInfo };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Download update
+ipcMain.handle('app:downloadUpdate', async (event, downloadUrl) => {
+  try {
+    const filePath = await updater.downloadUpdate(downloadUrl, (progress) => {
+      // Send progress updates to renderer
+      event.sender.send('update:downloadProgress', progress);
+    });
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Install update and quit app
+ipcMain.handle('app:installUpdate', async (event, filePath) => {
+  try {
+    await updater.installUpdate(filePath);
+    // Give the installer a moment to start, then quit
+    setTimeout(() => {
+      app.quit();
+    }, 1000);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
     });
     
     if (result.canceled) {
