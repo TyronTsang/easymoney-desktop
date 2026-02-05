@@ -473,6 +473,18 @@ export default function LoanList() {
                     />
                   </div>
                   <div className="col-span-2 space-y-2">
+                    <Label>Cell Phone (optional)</Label>
+                    <Input
+                      type="tel"
+                      value={loanForm.cell_phone}
+                      onChange={(e) => setLoanForm({...loanForm, cell_phone: e.target.value})}
+                      placeholder="0821234567"
+                      maxLength={10}
+                      className="bg-gray-50"
+                      data-testid="cell-phone-input"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-2">
                     <Label>SASSA End Date (optional)</Label>
                     <Input
                       type="date"
