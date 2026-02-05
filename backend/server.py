@@ -143,6 +143,13 @@ class LoanCreate(BaseModel):
     principal_amount: float
     repayment_plan_code: RepaymentPlan
     loan_date: str
+    
+    @field_validator('principal_amount')
+    @classmethod
+    def validate_loan_amount(cls, v):
+        if v < 400 or v > 8000:
+            raise ValueError('Loan amount must be between R400 and R8000')
+        return v
 
 class PaymentResponse(BaseModel):
     id: str
