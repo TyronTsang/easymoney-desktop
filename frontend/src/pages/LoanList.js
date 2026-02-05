@@ -287,7 +287,7 @@ export default function LoanList() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder="Search by name, ID number, or mandate..."
+                placeholder={user?.role === 'employee' ? "Search by name, ID number (13 digits to see old loans), or mandate..." : "Search by name, ID number, or mandate..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10 bg-gray-50 border-gray-200"
@@ -308,6 +308,15 @@ export default function LoanList() {
               <Filter className="w-4 h-4" /> Filters
             </Button>
           </div>
+          
+          {user?.role === 'employee' && (
+            <div className="mt-3 p-2 bg-blue-50 rounded-md border border-blue-200">
+              <p className="text-xs text-blue-700 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                <span>You're viewing today's loans only. To access older loans, search with the full 13-digit ID number.</span>
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
