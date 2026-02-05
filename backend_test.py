@@ -411,6 +411,91 @@ class EasyMoneyLoansAPITester:
 
         return True
 
+    def test_comprehensive_validation(self):
+        """Test comprehensive data validation and error handling"""
+        print("\n🔍 Testing Comprehensive Data Validation...")
+        
+        # Test API returns proper JSON responses
+        success, data = self.make_request('GET', 'dashboard/stats')
+        if success:
+            try:
+                # Verify response is valid JSON and contains expected structure
+                if isinstance(data, dict) and 'total_customers' in data:
+                    self.log_result("API Returns Proper JSON", True)
+                else:
+                    self.log_result("API Returns Proper JSON", False, "Invalid JSON structure")
+            except Exception as e:
+                self.log_result("API Returns Proper JSON", False, f"JSON parsing error: {str(e)}")
+        else:
+            self.log_result("API Returns Proper JSON", False, str(data))
+
+        # Test error messages are strings (not objects) - customer validation
+        invalid_customer = {
+            "client_name": "",  # Empty name
+            "id_number": "123",  # Too short
+            "mandate_id": "",
+            "cell_phone": "invalid_phone"
+        }
+        
+        success, data = self.make_request('POST', 'customers', invalid_customer, 422)
+        if not success:
+            # Check if error details are strings
+            detail = data.get('detail', [])
+            if isinstance(detail, list) and len(detail) > 0:
+                # Check if individual error messages are strings
+                all_strings = all(isinstance(error.get('msg', ''), str) for error in detail if isinstance(error, dict))
+                if all_strings:
+                    self.log_result("Customer Validation Error Messages Are Strings", True)
+                else:
+                    self.log_result("Customer Validation Error Messages Are Strings", False, "Some error messages are not strings")
+            elif isinstance(detail, str):
+                self.log_result("Customer Validation Error Messages Are Strings", True)
+            else:
+                self.log_result("Customer Validation Error Messages Are Strings", False, f"Error detail type: {type(detail)}")
+        else:
+            self.log_result("Customer Validation Error Messages Are Strings", False, "Invalid customer was accepted")
+
+        # Test no "Objects are not valid as a React child" errors by checking response structure
+        success, customers = self.make_request('GET', 'customers')
+        if success and isinstance(customers, list):
+            # Check that all customer objects have proper string values
+            valid_structure = True
+            for customer in customers[:5]:  # Check first 5 customers
+                for key, value in customer.items():
+                    if value is not None and not isinstance(value, (str, int, float, bool)):
+                        valid_structure = False
+                        break
+                if not valid_structure:
+                    break
+            
+            if valid_structure:
+                self.log_result("Customer Data Structure Valid (No Objects as React Children)", True)
+            else:
+                self.log_result("Customer Data Structure Valid (No Objects as React Children)", False, "Found non-primitive values")
+        else:
+            self.log_result("Customer Data Structure Valid (No Objects as React Children)", False, "Could not fetch customers")
+
+        # Test loan data structure
+        success, loans = self.make_request('GET', 'loans')
+        if success and isinstance(loans, list):
+            valid_structure = True
+            for loan in loans[:5]:  # Check first 5 loans
+                for key, value in loan.items():
+                    if key != 'payments' and value is not None and not isinstance(value, (str, int, float, bool, list)):
+                        valid_structure = False
+                        break
+                if not valid_structure:
+                    break
+            
+            if valid_structure:
+                self.log_result("Loan Data Structure Valid (No Objects as React Children)", True)
+            else:
+                self.log_result("Loan Data Structure Valid (No Objects as React Children)", False, "Found non-primitive values")
+        else:
+            self.log_result("Loan Data Structure Valid (No Objects as React Children)", False, "Could not fetch loans")
+
+        return True
+
     def test_fraud_detection(self):
         """Test fraud detection features"""
         print("\n🚨 Testing Fraud Detection...")
