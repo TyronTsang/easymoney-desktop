@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { RefreshCw, Plus, Search, Zap, Lock, Filter, ChevronUp, ChevronDown } from 'lucide-react';
+import { RefreshCw, Plus, Search, Zap, Lock, Filter, ChevronUp, ChevronDown, AlertCircle } from 'lucide-react';
 
 export default function LoanList() {
   const { api, user } = useAuth();
