@@ -118,6 +118,7 @@ export default function LoanList() {
           client_name: loanForm.client_name,
           id_number: loanForm.id_number,
           mandate_id: loanForm.mandate_id,
+          cell_phone: loanForm.cell_phone || null,
           sassa_end_date: loanForm.sassa_end_date || null
         });
         customerId = customerRes.data.id;
