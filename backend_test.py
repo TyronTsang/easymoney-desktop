@@ -150,7 +150,7 @@ class EasyMoneyLoansAPITester:
         # Test customer creation with cell_phone field as per review request
         test_customer = {
             "client_name": "Test Customer Final",
-            "id_number": "9001015009087",  # Valid SA ID from review request
+            "id_number": "8001015009087",  # Valid SA ID (passes Luhn algorithm)
             "mandate_id": "M999",
             "cell_phone": "0821234567",  # NEW field - must work
             "sassa_end_date": "2026-12-31"
