@@ -373,14 +373,34 @@ export default function AdminPanel() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="export_path">Export Folder Path</Label>
-                <Input 
-                  id="export_path" 
-                  value={settingsForm.export_folder_path} 
-                  onChange={(e) => setSettingsForm({...settingsForm, export_folder_path: e.target.value})} 
-                  placeholder="C:\Users\Staff\Dropbox\EasyMoneyLoans\Exports" 
-                  className="bg-secondary font-mono text-sm" 
-                  data-testid="export-path-input" 
-                />
+                <div className="flex gap-2">
+                  <Input 
+                    id="export_path" 
+                    value={settingsForm.export_folder_path} 
+                    onChange={(e) => setSettingsForm({...settingsForm, export_folder_path: e.target.value})} 
+                    placeholder="C:\Users\Staff\Dropbox\EasyMoneyLoans\Exports" 
+                    className="bg-secondary font-mono text-sm flex-1" 
+                    data-testid="export-path-input" 
+                  />
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={async () => {
+                      if (window.electronAPI?.selectFolder) {
+                        const folder = await window.electronAPI.selectFolder();
+                        if (folder) {
+                          setSettingsForm({...settingsForm, export_folder_path: folder});
+                        }
+                      } else {
+                        toast.error('Folder selection only available in desktop app');
+                      }
+                    }}
+                    className="gap-2"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    Browse
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">Path to the Dropbox-synced folder for exports</p>
               </div>
               <div className="space-y-2">
