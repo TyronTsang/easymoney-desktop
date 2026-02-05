@@ -223,30 +223,68 @@ class EasyMoneyLoansAPITester:
         return True
 
     def test_loan_management(self):
-        """Test loan creation and management"""
+        """Test loan creation and management with validation"""
         print("\n💰 Testing Loan Management...")
         
         if not self.test_customer_id:
             self.log_result("Loan Creation", False, "No test customer available")
             return False
 
-        # Create loan
+        # Test loan creation with amount within valid range (400-8000)
         test_loan = {
             "customer_id": self.test_customer_id,
-            "principal_amount": 1000.0,
-            "repayment_plan_code": 2,  # Fortnightly
-            "loan_date": datetime.now().isoformat()
+            "principal_amount": 500.0,  # Within 400-8000 range as per review request
+            "repayment_plan_code": 4,  # Weekly (4 payments)
+            "loan_date": datetime.now().date().isoformat()  # Today's date
         }
         
         success, data = self.make_request('POST', 'loans', test_loan, 200)
         if success and data.get('id'):
             self.test_loan_id = data['id']
-            self.log_result("Create Loan", True)
+            self.log_result("Create Loan (Valid Amount)", True)
         else:
-            self.log_result("Create Loan", False, str(data))
+            self.log_result("Create Loan (Valid Amount)", False, str(data))
             return False
 
-        # List loans
+        # Test loan amount validation - below minimum (should fail)
+        invalid_loan_low = {
+            "customer_id": self.test_customer_id,
+            "principal_amount": 300.0,  # Below 400 minimum
+            "repayment_plan_code": 4,
+            "loan_date": datetime.now().date().isoformat()
+        }
+        
+        success, data = self.make_request('POST', 'loans', invalid_loan_low, 422)
+        if not success:  # Should fail
+            self.log_result("Loan Amount Validation (Below 400)", True)
+            # Verify error message is string
+            if isinstance(data.get('detail'), str):
+                self.log_result("Error Message Format (Below Min)", True)
+            else:
+                self.log_result("Error Message Format (Below Min)", False, f"Error not string: {type(data.get('detail'))}")
+        else:
+            self.log_result("Loan Amount Validation (Below 400)", False, "Amount below 400 was accepted")
+
+        # Test loan amount validation - above maximum (should fail)
+        invalid_loan_high = {
+            "customer_id": self.test_customer_id,
+            "principal_amount": 9000.0,  # Above 8000 maximum
+            "repayment_plan_code": 4,
+            "loan_date": datetime.now().date().isoformat()
+        }
+        
+        success, data = self.make_request('POST', 'loans', invalid_loan_high, 422)
+        if not success:  # Should fail
+            self.log_result("Loan Amount Validation (Above 8000)", True)
+            # Verify error message is string
+            if isinstance(data.get('detail'), str):
+                self.log_result("Error Message Format (Above Max)", True)
+            else:
+                self.log_result("Error Message Format (Above Max)", False, f"Error not string: {type(data.get('detail'))}")
+        else:
+            self.log_result("Loan Amount Validation (Above 8000)", False, "Amount above 8000 was accepted")
+
+        # List loans and verify calculations
         success, data = self.make_request('GET', 'loans')
         if success and isinstance(data, list):
             self.log_result("List Loans", True)
@@ -255,33 +293,40 @@ class EasyMoneyLoansAPITester:
             test_loan_data = next((l for l in data if l.get('id') == self.test_loan_id), None)
             if test_loan_data:
                 # Verify loan calculation (40% interest + R12 service fee)
-                expected_total = (1000 * 1.40) + 12  # 1412
-                expected_installment = expected_total / 2  # 706
+                expected_total = (500 * 1.40) + 12  # 712
+                expected_installment = expected_total / 4  # 178 (weekly payments)
                 
                 if (abs(test_loan_data.get('total_repayable', 0) - expected_total) < 0.01 and
                     abs(test_loan_data.get('installment_amount', 0) - expected_installment) < 0.01):
-                    self.log_result("Loan Calculation", True)
+                    self.log_result("Loan Calculation (500 @ 4 payments)", True)
                 else:
-                    self.log_result("Loan Calculation", False, 
+                    self.log_result("Loan Calculation (500 @ 4 payments)", False, 
                                   f"Expected total: {expected_total}, got: {test_loan_data.get('total_repayable')}")
+                
+                # Verify outstanding balance equals total repayable initially
+                if abs(test_loan_data.get('outstanding_balance', 0) - expected_total) < 0.01:
+                    self.log_result("Initial Outstanding Balance", True)
+                else:
+                    self.log_result("Initial Outstanding Balance", False,
+                                  f"Outstanding should equal total: {expected_total}, got: {test_loan_data.get('outstanding_balance')}")
             else:
                 self.log_result("Loan in List", False, "Created loan not found in list")
         else:
             self.log_result("List Loans", False, str(data))
 
-        # Get loan details
+        # Get loan details and verify 4 payments generated
         if self.test_loan_id:
             success, data = self.make_request('GET', f'loans/{self.test_loan_id}')
             if success and data.get('id') == self.test_loan_id:
                 self.log_result("Get Loan Details", True)
                 
-                # Verify payment schedule
+                # Verify payment schedule - should have 4 payments for weekly plan
                 payments = data.get('payments', [])
-                if len(payments) == 2:  # Fortnightly = 2 payments
-                    self.log_result("Payment Schedule Generation", True)
+                if len(payments) == 4:  # Weekly = 4 payments
+                    self.log_result("Payment Schedule Generation (4 payments)", True)
                 else:
-                    self.log_result("Payment Schedule Generation", False, 
-                                  f"Expected 2 payments, got {len(payments)}")
+                    self.log_result("Payment Schedule Generation (4 payments)", False, 
+                                  f"Expected 4 payments, got {len(payments)}")
                 return True
             else:
                 self.log_result("Get Loan Details", False, str(data))
