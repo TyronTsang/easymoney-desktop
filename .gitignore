@@ -85,3 +85,4 @@ electron/node_modules/electron/dist/electron
 # Environment files
 *.env
 *.env.*
+easymoney-desktop-build.zip

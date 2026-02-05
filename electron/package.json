@@ -16,9 +16,7 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.3",
-    "electron-store": "^8.1.0",
-    "exceljs": "^4.4.0"
+    "electron-store": "^8.1.0"
   },
   "build": {
     "appId": "com.easymoney.desktop",
@@ -49,7 +47,7 @@
     "files": [
       "main.js",
       "preload.js",
-      "database.js",
+      "updater.js",
       "package.json"
     ],
     "extraResources": [
