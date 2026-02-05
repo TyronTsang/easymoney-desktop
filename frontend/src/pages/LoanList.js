@@ -215,7 +215,23 @@ export default function LoanList() {
         loan.customer_id_number?.includes(search) ||
         loan.customer_mandate_id?.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      
+      // Security: Employees can only see today's loans unless they search with full 13-digit ID
+      let matchesDateRestriction = true;
+      if (user?.role === 'employee') {
+        const today = new Date().toISOString().split('T')[0];
+        const loanDate = loan.loan_date || loan.created_at?.split('T')[0];
+        
+        // If searching with full 13-digit ID, show all matching loans
+        const isFullIdSearch = search.length === 13 && /^\d{13}$/.test(search);
+        
+        // Otherwise, only show today's loans
+        if (!isFullIdSearch) {
+          matchesDateRestriction = loanDate === today;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesDateRestriction;
     })
     .sort((a, b) => {
       let aVal = a[sortField];
