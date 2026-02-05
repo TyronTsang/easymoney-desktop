@@ -437,14 +437,34 @@ export default function AdminPanel() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="backup_path">Backup Folder Path</Label>
-                  <Input
-                    id="backup_path"
-                    value={backupConfig.backup_folder_path}
-                    onChange={(e) => setBackupConfig({...backupConfig, backup_folder_path: e.target.value})}
-                    placeholder="C:\Users\Staff\Dropbox\EasyMoneyLoans\Backups"
-                    className="bg-secondary font-mono text-sm"
-                    data-testid="backup-path-input"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="backup_path"
+                      value={backupConfig.backup_folder_path}
+                      onChange={(e) => setBackupConfig({...backupConfig, backup_folder_path: e.target.value})}
+                      placeholder="C:\Users\Staff\Dropbox\EasyMoneyLoans\Backups"
+                      className="bg-secondary font-mono text-sm flex-1"
+                      data-testid="backup-path-input"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={async () => {
+                        if (window.electronAPI?.selectFolder) {
+                          const folder = await window.electronAPI.selectFolder();
+                          if (folder) {
+                            setBackupConfig({...backupConfig, backup_folder_path: folder});
+                          }
+                        } else {
+                          toast.error('Folder selection only available in desktop app');
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <FolderOpen className="w-4 h-4" />
+                      Browse
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground">Backups will be saved as JSON files with timestamps</p>
                 </div>
                 
