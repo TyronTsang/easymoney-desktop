@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Payments
   markPaymentPaid: (loanId, installmentNumber, userId) => 
     ipcRenderer.invoke('db:markPaymentPaid', loanId, installmentNumber, userId),
+  unmarkPaymentPaid: (loanId, installmentNumber, userId) =>
+    ipcRenderer.invoke('db:unmarkPaymentPaid', loanId, installmentNumber, userId),
   
   // Dashboard
   getDashboardStats: () => ipcRenderer.invoke('db:getDashboardStats'),
