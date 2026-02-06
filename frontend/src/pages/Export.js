@@ -87,6 +87,28 @@ export default function Export() {
     try {
       const { dateFrom, dateTo } = getDateRangeForExport();
       
+      // In Electron mode, use folder dialog and export directly
+      if (window.electronAPI) {
+        let folder = selectedFolder;
+        if (!folder) {
+          folder = await window.electronAPI.selectFolder();
+          if (!folder) {
+            setLoading(false);
+            return;
+          }
+          setSelectedFolder(folder);
+        }
+        const result = await window.electronAPI.exportData(exportType, user?.id || '');
+        if (result?.success) {
+          toast.success(`Exported to ${result.filePath || folder}`);
+        } else {
+          toast.error(result?.error || 'Export failed');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Web mode - download file
       const res = await api().post('/export', { 
         export_type: exportType, 
         save_to_path: saveToPath,
@@ -115,7 +137,7 @@ export default function Export() {
         toast.success(`Export downloaded as ${res.data.filename}`);
       }
     } catch (err) { 
-      toast.error(err.response?.data?.detail || 'Export failed'); 
+      toast.error(err.response?.data?.detail || err.message || 'Export failed'); 
     } finally { 
       setLoading(false); 
     }
