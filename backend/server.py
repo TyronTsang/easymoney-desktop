@@ -762,6 +762,16 @@ async def create_loan(data: LoanCreate, user: dict = Depends(get_current_user)):
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
+    # Check for existing open loans for this customer
+    open_loans = await db.loans.find({
+        "customer_id": data.customer_id,
+        "status": LoanStatus.OPEN.value,
+        "archived_at": None
+    }, {"_id": 0}).to_list(100)
+    
+    if open_loans:
+        raise HTTPException(status_code=400, detail="Customer has an open loan that must be fully paid before creating a new one")
+    
     calc = calculate_loan(data.principal_amount, data.repayment_plan_code.value)
     payments = generate_payment_schedule(data.loan_date, calc["total_repayable"], data.repayment_plan_code.value)
     
