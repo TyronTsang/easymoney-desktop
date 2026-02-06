@@ -109,15 +109,10 @@ class EasyMoneyDatabase {
       )
     `);
 
-    // Create trigger to prevent unmarking paid payments
-    this.db.exec(`
-      CREATE TRIGGER IF NOT EXISTS prevent_payment_unmark
-      BEFORE UPDATE ON payments
-      WHEN OLD.is_paid = 1 AND NEW.is_paid = 0
-      BEGIN
-        SELECT RAISE(ABORT, 'Cannot unmark a paid payment - payment immutability enforced');
-      END
-    `);
+    // Payment immutability is enforced by application logic:
+    // - Monthly (single payment): locked immediately after marked paid
+    // - Weekly/Fortnightly: locked only after ALL payments are completed
+    this.db.exec(`DROP TRIGGER IF EXISTS prevent_payment_unmark`);
 
     // Audit logs table
     this.db.exec(`
