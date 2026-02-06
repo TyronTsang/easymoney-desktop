@@ -948,4 +948,88 @@ class EasyMoneyDatabase {
   }
 }
 
+  // Admin operations
+  adminEditPayment(paymentId, data) {
+    const payment = this.db.prepare('SELECT * FROM payments WHERE id = ?').get(paymentId);
+    if (!payment) throw new Error('Payment not found');
+    
+    const updates = [];
+    const values = [];
+    if (data.amount_due !== undefined) { updates.push('amount_due = ?'); values.push(parseFloat(data.amount_due)); }
+    if (data.is_paid !== undefined) {
+      updates.push('is_paid = ?'); values.push(data.is_paid ? 1 : 0);
+      if (data.is_paid) {
+        updates.push('paid_at = ?'); values.push(new Date().toISOString());
+      } else {
+        updates.push('paid_at = NULL');
+        updates.push('paid_by = NULL');
+      }
+    }
+    
+    if (updates.length > 0) {
+      values.push(paymentId);
+      this.db.prepare(`UPDATE payments SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      this.recalculateLoanBalance(payment.loan_id);
+    }
+    return { message: 'Payment updated by admin' };
+  }
+
+  adminDeletePayment(paymentId) {
+    const payment = this.db.prepare('SELECT * FROM payments WHERE id = ?').get(paymentId);
+    if (!payment) throw new Error('Payment not found');
+    
+    this.db.prepare('DELETE FROM payments WHERE id = ?').run(paymentId);
+    this.recalculateLoanBalance(payment.loan_id);
+    return { message: 'Payment deleted by admin' };
+  }
+
+  adminEditLoan(loanId, data) {
+    const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
+    if (!loan) throw new Error('Loan not found');
+    
+    const allowed = ['principal_amount', 'loan_date', 'status', 'outstanding_balance', 'repayment_plan_code'];
+    const updates = [];
+    const values = [];
+    for (const field of allowed) {
+      if (data[field] !== undefined) { updates.push(`${field} = ?`); values.push(data[field]); }
+    }
+    updates.push('updated_at = ?'); values.push(new Date().toISOString());
+    
+    if (updates.length > 1) {
+      values.push(loanId);
+      this.db.prepare(`UPDATE loans SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    }
+    return { message: 'Loan updated by admin' };
+  }
+
+  adminEditCustomer(customerId, data) {
+    const customer = this.db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+    if (!customer) throw new Error('Customer not found');
+    
+    const allowed = ['client_name', 'id_number', 'cell_phone', 'mandate_id', 'sassa_end_date'];
+    const updates = [];
+    const values = [];
+    for (const field of allowed) {
+      if (data[field] !== undefined) { updates.push(`${field} = ?`); values.push(data[field]); }
+    }
+    updates.push('updated_at = ?'); values.push(new Date().toISOString());
+    
+    if (updates.length > 1) {
+      values.push(customerId);
+      this.db.prepare(`UPDATE customers SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    }
+    return { message: 'Customer updated by admin' };
+  }
+
+  recalculateLoanBalance(loanId) {
+    const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
+    if (!loan) return;
+    const payments = this.db.prepare('SELECT * FROM payments WHERE loan_id = ?').all(loanId);
+    const totalPaid = payments.filter(p => p.is_paid).reduce((sum, p) => sum + p.amount_due, 0);
+    const newBalance = Math.max(0, Math.round((loan.total_repayable - totalPaid) * 100) / 100);
+    const newStatus = newBalance === 0 ? 'paid' : 'open';
+    this.db.prepare('UPDATE loans SET outstanding_balance = ?, status = ? WHERE id = ?').run(newBalance, newStatus, loanId);
+  }
+
+
 module.exports = EasyMoneyDatabase;
