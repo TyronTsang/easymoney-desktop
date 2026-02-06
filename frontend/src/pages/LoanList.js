@@ -298,16 +298,16 @@ export default function LoanList() {
     }
   });
 
-  // Admin: Delete payment
-  const handleDeletePayment = async (e, loanId, paymentId) => {
+  // Admin: Delete entire loan
+  const handleDeleteLoan = async (e, loanId) => {
     if (e) e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this payment? This action is logged.')) return;
+    if (!window.confirm('Are you sure you want to delete this entire loan and all its payments? This action is logged and cannot be undone.')) return;
     try {
-      await api().delete(`/admin/payments/${paymentId}`);
-      toast.success('Payment deleted');
+      await api().delete(`/admin/loans/${loanId}`);
+      toast.success('Loan deleted');
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || err.message || 'Failed to delete payment');
+      toast.error(err.response?.data?.detail || err.message || 'Failed to delete loan');
     }
   };
 
