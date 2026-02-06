@@ -611,6 +611,44 @@ class EasyMoneyDatabase {
     return { message: 'Payment marked as paid', new_balance: newBalance, loan_status: newStatus };
   }
 
+  unmarkPaymentPaid(loanId, installmentNumber, userId) {
+    const payment = this.db.prepare('SELECT * FROM payments WHERE loan_id = ? AND installment_number = ?').get(loanId, installmentNumber);
+    
+    if (!payment) {
+      throw new Error('Payment not found');
+    }
+    
+    if (!payment.is_paid) {
+      throw new Error('Payment is not marked as paid');
+    }
+    
+    // Check if multi-payment plan
+    const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
+    if (!loan || loan.repayment_plan_code <= 1) {
+      throw new Error('Cannot unmark single-payment loans');
+    }
+    
+    // Check if all payments are paid (fully settled = locked)
+    const allPayments = this.db.prepare('SELECT * FROM payments WHERE loan_id = ?').all(loanId);
+    if (allPayments.every(p => p.is_paid)) {
+      throw new Error('Cannot unmark - all payments completed and locked');
+    }
+    
+    const now = new Date().toISOString();
+    const user = this.getUser(userId);
+    
+    this.db.prepare('UPDATE payments SET is_paid = 0, paid_at = NULL, paid_by = NULL WHERE id = ?').run(payment.id);
+    
+    // Update loan outstanding balance
+    const newBalance = Math.round((loan.outstanding_balance + payment.amount_due) * 100) / 100;
+    this.db.prepare('UPDATE loans SET outstanding_balance = ?, status = ?, updated_at = ?, updated_by = ? WHERE id = ?').run(newBalance, 'open', now, userId, loanId);
+    
+    this.createAuditLog('payment', payment.id, 'unmark_paid', userId, user.full_name, { is_paid: true }, { is_paid: false });
+    
+    return { message: 'Payment unmarked', new_balance: newBalance, loan_status: 'open' };
+  }
+
+
   // ==================== DASHBOARD ====================
   getDashboardStats() {
     const totalCustomers = this.db.prepare('SELECT COUNT(*) as count FROM customers WHERE archived_at IS NULL').get().count;
