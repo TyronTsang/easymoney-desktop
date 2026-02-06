@@ -377,15 +377,25 @@ export default function LoanList() {
             const shouldLock = payment.is_paid && (!isMultiPayment || allPaid);
             return (
               <div key={idx} className="flex items-center gap-1">
-                {shouldLock && <Lock className="w-3 h-3 text-gray-400" />}
+                {shouldLock && !isAdmin && <Lock className="w-3 h-3 text-gray-400" />}
                 <span className="text-xs text-gray-500">P{idx + 1}</span>
                 <Switch
                   checked={payment.is_paid}
                   onCheckedChange={() => handleMarkPayment(null, loan.id, payment.installment_number, payment.is_paid)}
-                  disabled={shouldLock}
+                  disabled={shouldLock && !isAdmin}
                   className="data-[state=checked]:bg-green-500"
                   data-testid={`payment-toggle-${loan.id}-${idx + 1}`}
                 />
+                {isAdmin && (
+                  <>
+                    <button onClick={(e) => { e.stopPropagation(); setEditingPayment(payment); setEditAmount(payment.amount_due?.toString() || ''); setEditPaymentOpen(true); }} className="p-0.5 hover:bg-gray-200 rounded" title="Edit payment">
+                      <Pencil className="w-3 h-3 text-blue-500" />
+                    </button>
+                    <button onClick={(e) => handleDeletePayment(e, loan.id, payment.id)} className="p-0.5 hover:bg-gray-200 rounded" title="Delete payment">
+                      <Trash2 className="w-3 h-3 text-red-500" />
+                    </button>
+                  </>
+                )}
               </div>
             );
           })}
