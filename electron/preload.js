@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Admin operations
   adminEditPayment: (paymentId, data) => ipcRenderer.invoke('db:adminEditPayment', paymentId, data),
-  adminDeletePayment: (paymentId) => ipcRenderer.invoke('db:adminDeletePayment', paymentId),
+  adminDeleteLoan: (loanId) => ipcRenderer.invoke('db:adminDeleteLoan', loanId),
   adminEditLoan: (loanId, data) => ipcRenderer.invoke('db:adminEditLoan', loanId, data),
   adminEditCustomer: (customerId, data) => ipcRenderer.invoke('db:adminEditCustomer', customerId, data),
   
