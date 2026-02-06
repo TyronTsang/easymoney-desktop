@@ -400,19 +400,24 @@ export default function LoanList() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          {loan.payments?.slice(0, 4).map((payment, idx) => (
-                            <div key={idx} className="flex items-center gap-1">
-                              {payment.is_paid && <Lock className="w-3 h-3 text-gray-400" />}
-                              <span className="text-xs text-gray-500">P{idx + 1}</span>
-                              <Switch
-                                checked={payment.is_paid}
-                                onCheckedChange={() => handleMarkPayment(null, loan.id, payment.installment_number, payment.is_paid)}
-                                disabled={payment.is_paid}
-                                className="data-[state=checked]:bg-green-500"
-                                data-testid={`payment-toggle-${loan.id}-${idx + 1}`}
-                              />
-                            </div>
-                          ))}
+                          {loan.payments?.slice(0, 4).map((payment, idx) => {
+                            const allPaid = loan.payments?.every(p => p.is_paid);
+                            const isMultiPayment = loan.repayment_plan_code > 1;
+                            const shouldLock = payment.is_paid && (!isMultiPayment || allPaid);
+                            return (
+                              <div key={idx} className="flex items-center gap-1">
+                                {shouldLock && <Lock className="w-3 h-3 text-gray-400" />}
+                                <span className="text-xs text-gray-500">P{idx + 1}</span>
+                                <Switch
+                                  checked={payment.is_paid}
+                                  onCheckedChange={() => handleMarkPayment(null, loan.id, payment.installment_number, payment.is_paid)}
+                                  disabled={shouldLock}
+                                  className="data-[state=checked]:bg-green-500"
+                                  data-testid={`payment-toggle-${loan.id}-${idx + 1}`}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       </TableCell>
                     </TableRow>
