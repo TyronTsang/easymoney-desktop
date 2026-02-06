@@ -888,6 +888,59 @@ async def mark_payment_paid(data: MarkPaymentRequest, user: dict = Depends(get_c
     
     return {"message": "Payment marked as paid", "new_balance": max(0, new_balance), "loan_status": new_status}
 
+
+@api_router.post("/payments/unmark-paid")
+async def unmark_payment(data: MarkPaymentRequest, user: dict = Depends(get_current_user)):
+    """Unmark a payment - only for multi-payment plans where not all payments are paid"""
+    payment = await db.payments.find_one({
+        "loan_id": data.loan_id,
+        "installment_number": data.installment_number
+    }, {"_id": 0})
+    
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    if not payment.get("is_paid"):
+        raise HTTPException(status_code=400, detail="Payment is not marked as paid")
+    
+    # Check if multi-payment plan
+    loan = await db.loans.find_one({"id": data.loan_id}, {"_id": 0})
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    
+    if loan.get("repayment_plan_code", 1) <= 1:
+        raise HTTPException(status_code=400, detail="Cannot unmark single-payment loans")
+    
+    # Check if all payments are already paid (fully settled = locked)
+    all_payments = await db.payments.find({"loan_id": data.loan_id}, {"_id": 0}).to_list(None)
+    if all(p.get("is_paid") for p in all_payments):
+        raise HTTPException(status_code=400, detail="Cannot unmark - all payments completed and locked")
+    
+    # Unmark the payment
+    now = datetime.now(timezone.utc).isoformat()
+    await db.payments.update_one(
+        {"id": payment["id"]},
+        {"$set": {"is_paid": False, "paid_at": None, "paid_by": None}}
+    )
+    
+    # Update loan outstanding balance
+    new_balance = round(loan["outstanding_balance"] + payment["amount_due"], 2)
+    await db.loans.update_one(
+        {"id": data.loan_id},
+        {"$set": {
+            "outstanding_balance": new_balance,
+            "status": "open",
+            "updated_at": now,
+            "updated_by": user["id"]
+        }}
+    )
+    
+    await create_audit_log("payment", payment["id"], "unmark_paid", user["id"], user["full_name"],
+                           before={"is_paid": True}, after={"is_paid": False})
+    
+    return {"message": "Payment unmarked", "new_balance": new_balance, "loan_status": "open"}
+
+
 # ==================== FIELD OVERRIDE (Manager/Admin) ====================
 @api_router.post("/loans/override-field")
 async def override_loan_field(data: FieldOverrideRequest, user: dict = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN))):
