@@ -441,6 +441,7 @@ class EasyMoneyDatabase {
   getLoans(status = null) {
     let query = `
       SELECT l.*, c.client_name as customer_name, c.id_number as customer_id_number, c.mandate_id,
+             c.cell_phone as customer_cell_phone, c.sassa_end_date as customer_sassa_end,
              u.full_name as created_by_name
       FROM loans l
       JOIN customers c ON l.customer_id = c.id
