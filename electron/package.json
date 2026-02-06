@@ -22,6 +22,7 @@
   "build": {
     "appId": "com.easymoney.desktop",
     "productName": "EasyMoneyLoans",
+    "icon": "icon.ico",
     "copyright": "Copyright © 2024 EasyMoneyLoans",
     "directories": {
       "output": "dist"
