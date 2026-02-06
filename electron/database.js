@@ -973,13 +973,13 @@ class EasyMoneyDatabase {
     return { message: 'Payment updated by admin' };
   }
 
-  adminDeletePayment(paymentId) {
-    const payment = this.db.prepare('SELECT * FROM payments WHERE id = ?').get(paymentId);
-    if (!payment) throw new Error('Payment not found');
+  adminDeleteLoan(loanId) {
+    const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
+    if (!loan) throw new Error('Loan not found');
     
-    this.db.prepare('DELETE FROM payments WHERE id = ?').run(paymentId);
-    this.recalculateLoanBalance(payment.loan_id);
-    return { message: 'Payment deleted by admin' };
+    this.db.prepare('DELETE FROM payments WHERE loan_id = ?').run(loanId);
+    this.db.prepare('DELETE FROM loans WHERE id = ?').run(loanId);
+    return { message: 'Loan and all payments deleted by admin' };
   }
 
   adminEditLoan(loanId, data) {
