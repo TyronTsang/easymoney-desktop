@@ -7,11 +7,9 @@ import { Button } from '../components/ui/button';
 import { 
   Users, 
   CreditCard, 
-  Banknote, 
   AlertTriangle,
   TrendingUp,
   Clock,
-  Plus,
   ArrowRight
 } from 'lucide-react';
 
