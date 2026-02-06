@@ -437,6 +437,7 @@ export default function LoanList() {
                     <div className="flex items-center gap-1">Client Name {renderSortIcon("customer_name")}</div>
                   </TableHead>
                   <TableHead>ID Number</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Mandate ID</TableHead>
                   <TableHead>SASSA End</TableHead>
                   <TableHead>Loan Amount</TableHead>
