@@ -946,7 +946,6 @@ class EasyMoneyDatabase {
         return { success: false, error: err.message };
       });
   }
-}
 
   // Admin operations
   adminEditPayment(paymentId, data) {
