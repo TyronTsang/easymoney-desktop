@@ -141,6 +141,10 @@ class EasyMoneyDatabase {
       CREATE INDEX IF NOT EXISTS idx_payments_loan ON payments(loan_id);
       CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
     `);
+
+    // Migrations - add columns if they don't exist (for existing databases)
+    try { this.db.exec('ALTER TABLE customers ADD COLUMN cell_phone TEXT'); } catch (e) { /* column already exists */ }
+    try { this.db.exec('ALTER TABLE customers ADD COLUMN sassa_end_date TEXT'); } catch (e) { /* column already exists */ }
   }
 
   // ==================== HELPERS ====================
