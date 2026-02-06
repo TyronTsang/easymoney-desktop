@@ -301,7 +301,7 @@ export default function LoanList() {
 
   const calc = calculateLoan();
 
-  const LoanRow = ({ loan, isNested }) => (
+  const renderLoanRow = (loan, isNested) => (
     <TableRow 
       key={loan.id} 
       className={`hover:bg-gray-50 cursor-pointer ${isNested ? 'bg-gray-50/50' : ''} ${loan.fraud_flags?.includes('QUICK_CLOSE') ? 'bg-amber-50' : ''}`}
