@@ -181,36 +181,30 @@ export default function Dashboard() {
             <Button 
               variant="secondary" 
               className="w-full justify-start gap-2"
-              onClick={() => navigate('/customers')}
-              data-testid="quick-new-customer-btn"
-            >
-              <Users className="w-4 h-4" /> New Customer
-            </Button>
-            <Button 
-              variant="secondary" 
-              className="w-full justify-start gap-2"
-              onClick={() => navigate('/loans/new')}
-              data-testid="quick-new-loan-btn"
-            >
-              <CreditCard className="w-4 h-4" /> New Loan
-            </Button>
-            <Button 
-              variant="secondary" 
-              className="w-full justify-start gap-2"
               onClick={() => navigate('/loans')}
               data-testid="quick-view-loans-btn"
             >
-              <Banknote className="w-4 h-4" /> View All Loans
+              <CreditCard className="w-4 h-4" /> View Loan Register
             </Button>
             {['manager', 'admin'].includes(user?.role) && (
-              <Button 
-                variant="secondary" 
-                className="w-full justify-start gap-2"
-                onClick={() => navigate('/export')}
-                data-testid="quick-export-btn"
-              >
-                <TrendingUp className="w-4 h-4" /> Export Data
-              </Button>
+              <>
+                <Button 
+                  variant="secondary" 
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/export')}
+                  data-testid="quick-export-btn"
+                >
+                  <TrendingUp className="w-4 h-4" /> Export Data
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/fraud-alerts')}
+                  data-testid="quick-fraud-btn"
+                >
+                  <AlertTriangle className="w-4 h-4" /> Fraud Alerts
+                </Button>
+              </>
             )}
           </CardContent>
         </Card>
