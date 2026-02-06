@@ -265,6 +265,40 @@ ipcMain.handle('db:archiveEntity', async (event, entityType, entityId, reason, u
   }
 });
 
+
+// --- Admin Operations ---
+ipcMain.handle('db:adminEditPayment', async (event, paymentId, data) => {
+  try {
+    return database.adminEditPayment(paymentId, data);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+});
+
+ipcMain.handle('db:adminDeletePayment', async (event, paymentId) => {
+  try {
+    return database.adminDeletePayment(paymentId);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+});
+
+ipcMain.handle('db:adminEditLoan', async (event, loanId, data) => {
+  try {
+    return database.adminEditLoan(loanId, data);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+});
+
+ipcMain.handle('db:adminEditCustomer', async (event, customerId, data) => {
+  try {
+    return database.adminEditCustomer(customerId, data);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+});
+
 // --- Export ---
 ipcMain.handle('db:exportData', async (event, exportType, userId) => {
   try {
