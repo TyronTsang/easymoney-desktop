@@ -504,6 +504,12 @@ class EasyMoneyDatabase {
       throw new Error('Customer not found');
     }
     
+    // Check for existing open loans
+    const openLoans = this.db.prepare('SELECT id FROM loans WHERE customer_id = ? AND status = ? AND archived_at IS NULL').all(loanData.customer_id, 'open');
+    if (openLoans.length > 0) {
+      throw new Error('Customer has an open loan that must be fully paid before creating a new one');
+    }
+    
     const calc = this.calculateLoan(loanData.principal_amount, loanData.repayment_plan_code);
     const payments = this.generatePaymentSchedule(loanData.loan_date, calc.total_repayable, loanData.repayment_plan_code);
     
