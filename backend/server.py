@@ -746,6 +746,7 @@ async def list_loans(
             "customer_id_number_masked": mask_id_number(customer["id_number"]) if customer else "Unknown",
             "customer_mandate_id": customer.get("mandate_id") if customer else None,
             "customer_sassa_end": customer.get("sassa_end_date") if customer else None,
+            "customer_cell_phone": customer.get("cell_phone") if customer else None,
             "mandate_id": customer["mandate_id"] if customer else "Unknown",
             "created_by_name": creator["full_name"] if creator else "Unknown",
             "payments": enriched_payments,
