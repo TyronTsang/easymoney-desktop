@@ -97,14 +97,6 @@ export default function Dashboard() {
             Welcome back, {user?.full_name}
           </p>
         </div>
-        <Button 
-          onClick={() => navigate('/loans/new')}
-          className="gap-2 bg-red-600 hover:bg-red-700"
-          data-testid="new-loan-btn"
-        >
-          <Plus className="w-4 h-4" />
-          New Loan
-        </Button>
       </div>
 
       {/* Stats Grid */}
