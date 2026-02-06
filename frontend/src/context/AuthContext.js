@@ -49,7 +49,7 @@ function createElectronApiProxy(getUserId) {
     { pattern: /^GET:\/customers\/(.+)$/, handler: (m) => electronAPI.getCustomer(m[1]) },
     { pattern: /^PUT:\/users\/(.+)\/toggle-active$/, handler: (m) => electronAPI.toggleUserActive(m[1]) },
     { pattern: /^PUT:\/admin\/payments\/(.+)$/, handler: (m, data) => electronAPI.adminEditPayment(m[1], data) },
-    { pattern: /^DELETE:\/admin\/payments\/(.+)$/, handler: (m) => electronAPI.adminDeletePayment(m[1]) },
+    { pattern: /^DELETE:\/admin\/loans\/(.+)$/, handler: (m) => electronAPI.adminDeleteLoan(m[1]) },
     { pattern: /^PUT:\/admin\/loans\/(.+)$/, handler: (m, data) => electronAPI.adminEditLoan(m[1], data) },
     { pattern: /^PUT:\/admin\/customers\/(.+)$/, handler: (m, data) => electronAPI.adminEditCustomer(m[1], data) },
   ];
