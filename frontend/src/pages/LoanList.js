@@ -259,6 +259,30 @@ export default function LoanList() {
     return sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
 
+  // Group loans by customer for duplicate detection
+  const groupedByCustomer = {};
+  filteredLoans.forEach(loan => {
+    const key = loan.customer_id_number || loan.customer_name;
+    if (!groupedByCustomer[key]) {
+      groupedByCustomer[key] = [];
+    }
+    groupedByCustomer[key].push(loan);
+  });
+
+  const toggleCustomerExpand = (key) => {
+    setExpandedCustomers(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Build display rows: for customers with multiple loans, show first loan + expand toggle
+  const displayRows = [];
+  Object.entries(groupedByCustomer).forEach(([key, customerLoans]) => {
+    if (customerLoans.length === 1) {
+      displayRows.push({ type: 'single', loan: customerLoans[0] });
+    } else {
+      displayRows.push({ type: 'group', key, loans: customerLoans, expanded: !!expandedCustomers[key] });
+    }
+  });
+
   const calc = calculateLoan();
 
   return (
