@@ -321,6 +321,7 @@ export default function LoanList() {
       <TableCell className="font-mono text-sm text-gray-600">
         {canViewFullId ? loan.customer_id_number : loan.customer_id_number_masked}
       </TableCell>
+      <TableCell className="text-sm text-gray-600">{loan.customer_cell_phone || '-'}</TableCell>
       <TableCell className="text-sm text-gray-600">{loan.customer_mandate_id || '-'}</TableCell>
       <TableCell className="text-sm text-gray-600">{loan.customer_sassa_end || '-'}</TableCell>
       <TableCell className="font-mono text-gray-900">R {loan.principal_amount?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}</TableCell>
