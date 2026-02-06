@@ -65,8 +65,6 @@ function AppRoutes() {
       <Route path="/login" element={<PublicRoute><LoginScreen /></PublicRoute>} />
       
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-      <Route path="/loans/new" element={<ProtectedRoute><CreateLoan /></ProtectedRoute>} />
       <Route path="/loans" element={<ProtectedRoute><LoanList /></ProtectedRoute>} />
       <Route path="/loans/:loanId" element={<ProtectedRoute><LoanDetails /></ProtectedRoute>} />
       <Route path="/fraud-alerts" element={<ProtectedRoute><FraudAlerts /></ProtectedRoute>} />
