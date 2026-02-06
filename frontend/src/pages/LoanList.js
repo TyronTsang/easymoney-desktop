@@ -415,7 +415,7 @@ export default function LoanList() {
             <div className="mt-3 p-2 bg-blue-50 rounded-md border border-blue-200">
               <p className="text-xs text-blue-700 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
-                <span>You're viewing today's loans only. To access older loans, search with the full 13-digit ID number.</span>
+                <span>Viewing today&apos;s loans only. To access older loans, search with the full 13-digit ID number.</span>
               </p>
             </div>
           )}
