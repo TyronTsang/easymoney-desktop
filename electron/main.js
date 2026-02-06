@@ -275,9 +275,9 @@ ipcMain.handle('db:adminEditPayment', async (event, paymentId, data) => {
   }
 });
 
-ipcMain.handle('db:adminDeletePayment', async (event, paymentId) => {
+ipcMain.handle('db:adminDeleteLoan', async (event, loanId) => {
   try {
-    return database.adminDeletePayment(paymentId);
+    return database.adminDeleteLoan(loanId);
   } catch (error) {
     throw new Error(error.message);
   }
