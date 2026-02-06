@@ -712,6 +712,24 @@ export default function LoanList() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Admin Edit Payment Dialog */}
+      <Dialog open={editPaymentOpen} onOpenChange={setEditPaymentOpen}>
+        <DialogContent className="max-w-sm bg-white">
+          <DialogHeader>
+            <DialogTitle>Edit Payment Amount</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Amount Due (R)</Label>
+              <Input type="number" step="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} data-testid="edit-payment-amount" />
+            </div>
+            <Button onClick={handleEditPayment} className="w-full bg-blue-600 hover:bg-blue-700 text-white" data-testid="save-payment-edit-btn">
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
