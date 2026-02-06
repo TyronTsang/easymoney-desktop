@@ -30,7 +30,6 @@ const LOGO_URL = "https://customer-assets.emergentagent.com/job_moneyloan/artifa
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['employee', 'manager', 'admin'] },
   { path: '/loans', icon: CreditCard, label: 'Loan Register', roles: ['employee', 'manager', 'admin'] },
-  { path: '/customers', icon: Users, label: 'Customers', roles: ['employee', 'manager', 'admin'] },
   { path: '/fraud-alerts', icon: AlertTriangle, label: 'Fraud Alerts', roles: ['manager', 'admin'] },
   { path: '/export', icon: Download, label: 'Export', roles: ['manager', 'admin'] },
   { path: '/audit-logs', icon: ScrollText, label: 'Audit Logs', roles: ['admin'] },
