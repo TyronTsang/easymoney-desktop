@@ -4,8 +4,6 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import MasterPasswordScreen from "./pages/MasterPasswordScreen";
 import LoginScreen from "./pages/LoginScreen";
 import Dashboard from "./pages/Dashboard";
-import Customers from "./pages/Customers";
-import CreateLoan from "./pages/CreateLoan";
 import LoanList from "./pages/LoanList";
 import LoanDetails from "./pages/LoanDetails";
 import FraudAlerts from "./pages/FraudAlerts";
