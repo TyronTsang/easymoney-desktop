@@ -303,6 +303,33 @@ export default function LoanList() {
     }
   });
 
+  // Admin: Delete payment
+  const handleDeletePayment = async (e, loanId, paymentId) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this payment? This action is logged.')) return;
+    try {
+      await api().delete(`/admin/payments/${paymentId}`);
+      toast.success('Payment deleted');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Failed to delete payment');
+    }
+  };
+
+  // Admin: Edit payment
+  const handleEditPayment = async () => {
+    if (!editingPayment) return;
+    try {
+      await api().put(`/admin/payments/${editingPayment.id}`, { amount_due: parseFloat(editAmount) });
+      toast.success('Payment updated');
+      setEditPaymentOpen(false);
+      setEditingPayment(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Failed to update payment');
+    }
+  };
+
   const calc = calculateLoan();
 
   const renderLoanRow = (loan, isNested) => (
