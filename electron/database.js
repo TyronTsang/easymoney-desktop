@@ -55,6 +55,8 @@ class EasyMoneyDatabase {
         client_name TEXT NOT NULL,
         id_number TEXT NOT NULL,
         mandate_id TEXT NOT NULL,
+        cell_phone TEXT,
+        sassa_end_date TEXT,
         created_at TEXT NOT NULL,
         created_by TEXT NOT NULL,
         updated_at TEXT,
