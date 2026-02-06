@@ -61,7 +61,11 @@ export default function LoanList() {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [useExistingCustomer, setUseExistingCustomer] = useState(false);
+  const [editPaymentOpen, setEditPaymentOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [editAmount, setEditAmount] = useState('');
 
+  const isAdmin = user?.role === 'admin';
   const canViewFullId = ['manager', 'admin'].includes(user?.role);
   const planNames = { 1: 'Monthly (1x)', 2: 'Fortnightly (2x)', 4: 'Weekly (4x)' };
 
