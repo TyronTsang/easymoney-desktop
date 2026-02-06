@@ -464,18 +464,13 @@ export default function LoanList() {
                 ) : (
                   displayRows.map((row) => {
                     if (row.type === 'single') {
-                      const loan = row.loan;
-                      return (
-                        <LoanRow key={loan.id} loan={loan} canViewFullId={canViewFullId} planNames={planNames} navigate={navigate} handleMarkPayment={handleMarkPayment} />
-                      );
+                      return renderLoanRow(row.loan, false);
                     }
-                    // Grouped customer with multiple loans
                     const { key, loans: customerLoans, expanded } = row;
                     const firstLoan = customerLoans[0];
                     return (
-                      <>
+                      <React.Fragment key={`group-${key}`}>
                         <TableRow 
-                          key={`group-${key}`}
                           className="hover:bg-gray-50 cursor-pointer bg-blue-50/50"
                           onClick={() => toggleCustomerExpand(key)}
                         >
@@ -491,10 +486,8 @@ export default function LoanList() {
                             <span className="text-sm text-gray-500">Click to {expanded ? 'collapse' : 'expand'}</span>
                           </TableCell>
                         </TableRow>
-                        {expanded && customerLoans.map((loan) => (
-                          <LoanRow key={loan.id} loan={loan} canViewFullId={canViewFullId} planNames={planNames} navigate={navigate} handleMarkPayment={handleMarkPayment} isNested />
-                        ))}
-                      </>
+                        {expanded && customerLoans.map((loan) => renderLoanRow(loan, true))}
+                      </React.Fragment>
                     );
                   })
                 )}
