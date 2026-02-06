@@ -476,7 +476,7 @@ export default function LoanList() {
                           className="hover:bg-gray-50 cursor-pointer bg-blue-50/50"
                           onClick={() => toggleCustomerExpand(key)}
                         >
-                          <TableCell colSpan={6}>
+                          <TableCell colSpan={7}>
                             <div className="flex items-center gap-2">
                               {expanded ? <ChevronUp className="w-4 h-4 text-blue-500" /> : <ChevronDown className="w-4 h-4 text-blue-500" />}
                               <span className="font-medium text-gray-900">{firstLoan.customer_name}</span>
