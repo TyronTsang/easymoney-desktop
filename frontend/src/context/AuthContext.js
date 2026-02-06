@@ -32,6 +32,7 @@ function createElectronApiProxy(getUserId) {
     'POST:/customers': (data) => electronAPI.createCustomer(data, getUserId()),
     'POST:/loans': (data) => electronAPI.createLoan(data, getUserId()),
     'POST:/payments/mark-paid': (data) => electronAPI.markPaymentPaid(data.loan_id, data.installment_number, getUserId()),
+    'POST:/payments/unmark-paid': (data) => electronAPI.unmarkPaymentPaid(data.loan_id, data.installment_number, getUserId()),
     'POST:/users': (data) => electronAPI.createUser(data),
     'POST:/export': (data) => electronAPI.exportData(data.export_type, getUserId()),
     'POST:/archive': (data) => electronAPI.archiveEntity(data.entity_type, data.entity_id, data.reason, getUserId()),
