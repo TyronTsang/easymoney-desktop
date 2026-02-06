@@ -270,7 +270,7 @@ export default function LoanList() {
     }
   };
 
-  const SortIcon = ({ field }) => {
+  const renderSortIcon = (field) => {
     if (sortField !== field) return null;
     return sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
