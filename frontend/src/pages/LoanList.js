@@ -43,6 +43,7 @@ export default function LoanList() {
   const [newLoanOpen, setNewLoanOpen] = useState(false);
   const [sortField, setSortField] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
+  const [expandedCustomers, setExpandedCustomers] = useState({});
 
   // New Loan Form State
   const [loanForm, setLoanForm] = useState({
