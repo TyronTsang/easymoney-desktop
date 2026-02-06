@@ -385,67 +385,41 @@ export default function LoanList() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredLoans.map((loan) => (
-                    <TableRow 
-                      key={loan.id} 
-                      className={`hover:bg-gray-50 cursor-pointer ${loan.fraud_flags?.includes('QUICK_CLOSE') ? 'bg-amber-50' : ''}`}
-                      onClick={() => navigate(`/loans/${loan.id}`)}
-                      data-testid={`loan-row-${loan.id}`}
-                    >
-                      <TableCell className="text-sm text-gray-600">
-                        {new Date(loan.created_at).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {loan.fraud_flags?.includes('QUICK_CLOSE') && (
-                            <Zap className="w-4 h-4 text-amber-500" />
-                          )}
-                          <span className="font-medium text-gray-900">{loan.customer_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm text-gray-600">
-                        {canViewFullId ? loan.customer_id_number : loan.customer_id_number_masked}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">{loan.customer_mandate_id || '-'}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{loan.customer_sassa_end || '-'}</TableCell>
-                      <TableCell className="font-mono text-gray-900">R {loan.principal_amount?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}</TableCell>
-                      <TableCell className="text-sm">
-                        <span className="text-gray-600">{planNames[loan.repayment_plan_code]?.split(' ')[0]}</span>
-                        <span className="text-gray-400 text-xs ml-1">({loan.repayment_plan_code}x)</span>
-                      </TableCell>
-                      <TableCell className="font-mono text-gray-900">R {loan.total_amount?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}</TableCell>
-                      <TableCell className={`font-mono font-semibold ${loan.outstanding_balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        R {loan.outstanding_balance?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={loan.status === 'paid' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-amber-100 text-amber-700 border-amber-200'}>
-                          {loan.status === 'paid' ? 'Paid' : 'Open'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          {loan.payments?.slice(0, 4).map((payment, idx) => {
-                            const allPaid = loan.payments?.every(p => p.is_paid);
-                            const isMultiPayment = loan.repayment_plan_code > 1;
-                            const shouldLock = payment.is_paid && (!isMultiPayment || allPaid);
-                            return (
-                              <div key={idx} className="flex items-center gap-1">
-                                {shouldLock && <Lock className="w-3 h-3 text-gray-400" />}
-                                <span className="text-xs text-gray-500">P{idx + 1}</span>
-                                <Switch
-                                  checked={payment.is_paid}
-                                  onCheckedChange={() => handleMarkPayment(null, loan.id, payment.installment_number, payment.is_paid)}
-                                  disabled={shouldLock}
-                                  className="data-[state=checked]:bg-green-500"
-                                  data-testid={`payment-toggle-${loan.id}-${idx + 1}`}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  displayRows.map((row) => {
+                    if (row.type === 'single') {
+                      const loan = row.loan;
+                      return (
+                        <LoanRow key={loan.id} loan={loan} canViewFullId={canViewFullId} planNames={planNames} navigate={navigate} handleMarkPayment={handleMarkPayment} />
+                      );
+                    }
+                    // Grouped customer with multiple loans
+                    const { key, loans: customerLoans, expanded } = row;
+                    const firstLoan = customerLoans[0];
+                    return (
+                      <>
+                        <TableRow 
+                          key={`group-${key}`}
+                          className="hover:bg-gray-50 cursor-pointer bg-blue-50/50"
+                          onClick={() => toggleCustomerExpand(key)}
+                        >
+                          <TableCell colSpan={6}>
+                            <div className="flex items-center gap-2">
+                              {expanded ? <ChevronUp className="w-4 h-4 text-blue-500" /> : <ChevronDown className="w-4 h-4 text-blue-500" />}
+                              <span className="font-medium text-gray-900">{firstLoan.customer_name}</span>
+                              <span className="font-mono text-sm text-gray-500">{canViewFullId ? firstLoan.customer_id_number : firstLoan.customer_id_number_masked}</span>
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-200">{customerLoans.length} loans</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell colSpan={5} className="text-right">
+                            <span className="text-sm text-gray-500">Click to {expanded ? 'collapse' : 'expand'}</span>
+                          </TableCell>
+                        </TableRow>
+                        {expanded && customerLoans.map((loan) => (
+                          <LoanRow key={loan.id} loan={loan} canViewFullId={canViewFullId} planNames={planNames} navigate={navigate} handleMarkPayment={handleMarkPayment} isNested />
+                        ))}
+                      </>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
