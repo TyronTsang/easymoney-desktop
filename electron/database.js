@@ -409,9 +409,9 @@ class EasyMoneyDatabase {
     const user = this.getUser(userId);
     
     this.db.prepare(`
-      INSERT INTO customers (id, client_name, id_number, mandate_id, created_at, created_by)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, customerData.client_name, customerData.id_number, customerData.mandate_id, now, userId);
+      INSERT INTO customers (id, client_name, id_number, mandate_id, cell_phone, sassa_end_date, created_at, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, customerData.client_name, customerData.id_number, customerData.mandate_id, customerData.cell_phone || null, customerData.sassa_end_date || null, now, userId);
     
     this.createAuditLog('customer', id, 'create', userId, user.full_name, null, { client_name: customerData.client_name, mandate_id: customerData.mandate_id });
     
@@ -421,6 +421,8 @@ class EasyMoneyDatabase {
       id_number: customerData.id_number,
       id_number_masked: this.maskIdNumber(customerData.id_number),
       mandate_id: customerData.mandate_id,
+      cell_phone: customerData.cell_phone || null,
+      sassa_end_date: customerData.sassa_end_date || null,
       created_at: now,
       created_by: userId,
       created_by_name: user.full_name
