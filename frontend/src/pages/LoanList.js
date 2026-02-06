@@ -430,10 +430,10 @@ export default function LoanList() {
               <TableHeader>
                 <TableRow className="bg-gray-50 hover:bg-gray-50">
                   <TableHead className="cursor-pointer" onClick={() => toggleSort('created_at')}>
-                    <div className="flex items-center gap-1">Loan Date <SortIcon field="created_at" /></div>
+                    <div className="flex items-center gap-1">Loan Date {renderSortIcon("created_at")}</div>
                   </TableHead>
                   <TableHead className="cursor-pointer" onClick={() => toggleSort('customer_name')}>
-                    <div className="flex items-center gap-1">Client Name <SortIcon field="customer_name" /></div>
+                    <div className="flex items-center gap-1">Client Name {renderSortIcon("customer_name")}</div>
                   </TableHead>
                   <TableHead>ID Number</TableHead>
                   <TableHead>Mandate ID</TableHead>
@@ -442,7 +442,7 @@ export default function LoanList() {
                   <TableHead>Plan</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead className="cursor-pointer" onClick={() => toggleSort('outstanding_balance')}>
-                    <div className="flex items-center gap-1">Balance <SortIcon field="outstanding_balance" /></div>
+                    <div className="flex items-center gap-1">Balance {renderSortIcon("outstanding_balance")}</div>
                   </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Payments</TableHead>
