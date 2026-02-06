@@ -177,20 +177,36 @@ export default function LoanList() {
     if (e && e.stopPropagation) {
       e.stopPropagation();
     }
-    if (currentlyPaid) {
+    
+    // Find the loan to check if multi-payment
+    const loan = loans.find(l => l.id === loanId);
+    const isMultiPayment = loan && loan.repayment_plan_code > 1;
+    const allPaid = loan?.payments?.every(p => p.is_paid);
+
+    // For monthly (single payment) or fully paid multi-payment loans, block unmarking
+    if (currentlyPaid && (!isMultiPayment || allPaid)) {
       toast.error('Payments cannot be unmarked');
       return;
     }
 
     try {
-      await api().post('/payments/mark-paid', {
-        loan_id: loanId,
-        installment_number: installmentNumber
-      });
-      toast.success(`Payment ${installmentNumber} marked as paid`);
+      if (currentlyPaid) {
+        // Unmark payment for multi-payment plans
+        await api().post('/payments/unmark-paid', {
+          loan_id: loanId,
+          installment_number: installmentNumber
+        });
+        toast.success(`Payment ${installmentNumber} unmarked`);
+      } else {
+        await api().post('/payments/mark-paid', {
+          loan_id: loanId,
+          installment_number: installmentNumber
+        });
+        toast.success(`Payment ${installmentNumber} marked as paid`);
+      }
       fetchData();
     } catch (err) {
-      let errorMsg = 'Failed to mark payment';
+      let errorMsg = 'Failed to update payment';
       
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
