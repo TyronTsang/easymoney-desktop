@@ -992,26 +992,20 @@ async def admin_edit_payment(payment_id: str, data: dict = Body(...), user: dict
     
     return {"message": "Payment updated by admin"}
 
-@api_router.delete("/admin/payments/{payment_id}")
-async def admin_delete_payment(payment_id: str, user: dict = Depends(require_role(UserRole.ADMIN))):
-    """Admin delete payment"""
-    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
-    if not payment:
-        raise HTTPException(status_code=404, detail="Payment not found")
+@api_router.delete("/admin/loans/{loan_id}")
+async def admin_delete_loan(loan_id: str, user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin delete entire loan and its payments"""
+    loan = await db.loans.find_one({"id": loan_id}, {"_id": 0})
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
     
-    await db.payments.delete_one({"id": payment_id})
+    # Delete all payments for this loan
+    await db.payments.delete_many({"loan_id": loan_id})
+    # Delete the loan
+    await db.loans.delete_one({"id": loan_id})
     
-    # Recalculate loan outstanding balance
-    loan = await db.loans.find_one({"id": payment["loan_id"]}, {"_id": 0})
-    if loan:
-        all_payments = await db.payments.find({"loan_id": payment["loan_id"]}, {"_id": 0}).to_list(None)
-        total_paid = sum(p["amount_due"] for p in all_payments if p.get("is_paid"))
-        new_balance = max(0, round(loan.get("total_repayable", 0) - total_paid, 2))
-        new_status = "paid" if new_balance == 0 else "open"
-        await db.loans.update_one({"id": payment["loan_id"]}, {"$set": {"outstanding_balance": new_balance, "status": new_status}})
-    
-    await create_audit_log("payment", payment_id, "admin_delete", user["id"], user["full_name"], before={"payment": payment}, after=None)
-    return {"message": "Payment deleted by admin"}
+    await create_audit_log("loan", loan_id, "admin_delete", user["id"], user["full_name"], before={"loan": loan}, after=None)
+    return {"message": "Loan and all payments deleted by admin"}
 
 @api_router.put("/admin/loans/{loan_id}")
 async def admin_edit_loan(loan_id: str, data: dict = Body(...), user: dict = Depends(require_role(UserRole.ADMIN))):
