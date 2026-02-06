@@ -205,6 +205,14 @@ ipcMain.handle('db:markPaymentPaid', async (event, loanId, installmentNumber, us
   }
 });
 
+ipcMain.handle('db:unmarkPaymentPaid', async (event, loanId, installmentNumber, userId) => {
+  try {
+    return database.unmarkPaymentPaid(loanId, installmentNumber, userId);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+});
+
 // --- Dashboard ---
 ipcMain.handle('db:getDashboardStats', async () => {
   try {
