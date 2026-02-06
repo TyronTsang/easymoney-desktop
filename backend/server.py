@@ -952,6 +952,110 @@ async def unmark_payment(data: MarkPaymentRequest, user: dict = Depends(get_curr
     return {"message": "Payment unmarked", "new_balance": new_balance, "loan_status": "open"}
 
 
+# ==================== ADMIN EDIT/DELETE (Admin only) ====================
+
+@api_router.put("/admin/payments/{payment_id}")
+async def admin_edit_payment(payment_id: str, data: dict = Body(...), user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin edit payment - can modify amount, paid status"""
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    before = {k: payment.get(k) for k in data.keys()}
+    now = datetime.now(timezone.utc).isoformat()
+    
+    update_fields = {}
+    if "amount_due" in data:
+        update_fields["amount_due"] = float(data["amount_due"])
+    if "is_paid" in data:
+        update_fields["is_paid"] = bool(data["is_paid"])
+        if data["is_paid"]:
+            update_fields["paid_at"] = now
+            update_fields["paid_by"] = user["id"]
+        else:
+            update_fields["paid_at"] = None
+            update_fields["paid_by"] = None
+    
+    if update_fields:
+        await db.payments.update_one({"id": payment_id}, {"$set": update_fields})
+        
+        # Recalculate loan outstanding balance
+        loan = await db.loans.find_one({"id": payment["loan_id"]}, {"_id": 0})
+        if loan:
+            all_payments = await db.payments.find({"loan_id": payment["loan_id"]}, {"_id": 0}).to_list(None)
+            total_paid = sum(p["amount_due"] for p in all_payments if p.get("is_paid") or (p["id"] == payment_id and update_fields.get("is_paid")))
+            new_balance = max(0, round(loan.get("total_repayable", 0) - total_paid, 2))
+            new_status = "paid" if new_balance == 0 else "open"
+            await db.loans.update_one({"id": payment["loan_id"]}, {"$set": {"outstanding_balance": new_balance, "status": new_status, "updated_at": now, "updated_by": user["id"]}})
+        
+        await create_audit_log("payment", payment_id, "admin_edit", user["id"], user["full_name"], before=before, after=update_fields)
+    
+    return {"message": "Payment updated by admin"}
+
+@api_router.delete("/admin/payments/{payment_id}")
+async def admin_delete_payment(payment_id: str, user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin delete payment"""
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    await db.payments.delete_one({"id": payment_id})
+    
+    # Recalculate loan outstanding balance
+    loan = await db.loans.find_one({"id": payment["loan_id"]}, {"_id": 0})
+    if loan:
+        all_payments = await db.payments.find({"loan_id": payment["loan_id"]}, {"_id": 0}).to_list(None)
+        total_paid = sum(p["amount_due"] for p in all_payments if p.get("is_paid"))
+        new_balance = max(0, round(loan.get("total_repayable", 0) - total_paid, 2))
+        new_status = "paid" if new_balance == 0 else "open"
+        await db.loans.update_one({"id": payment["loan_id"]}, {"$set": {"outstanding_balance": new_balance, "status": new_status}})
+    
+    await create_audit_log("payment", payment_id, "admin_delete", user["id"], user["full_name"], before={"payment": payment}, after=None)
+    return {"message": "Payment deleted by admin"}
+
+@api_router.put("/admin/loans/{loan_id}")
+async def admin_edit_loan(loan_id: str, data: dict = Body(...), user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin edit loan details"""
+    loan = await db.loans.find_one({"id": loan_id}, {"_id": 0})
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    
+    allowed_fields = ["principal_amount", "loan_date", "status", "outstanding_balance", "repayment_plan_code"]
+    before = {}
+    update_fields = {"updated_at": datetime.now(timezone.utc).isoformat(), "updated_by": user["id"]}
+    
+    for field in allowed_fields:
+        if field in data:
+            before[field] = loan.get(field)
+            update_fields[field] = data[field]
+    
+    await db.loans.update_one({"id": loan_id}, {"$set": update_fields})
+    await create_audit_log("loan", loan_id, "admin_edit", user["id"], user["full_name"], before=before, after={k: v for k, v in update_fields.items() if k != "updated_at" and k != "updated_by"})
+    
+    return {"message": "Loan updated by admin"}
+
+@api_router.put("/admin/customers/{customer_id}")
+async def admin_edit_customer(customer_id: str, data: dict = Body(...), user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin edit customer details"""
+    customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    allowed_fields = ["client_name", "id_number", "cell_phone", "mandate_id", "sassa_end_date"]
+    before = {}
+    update_fields = {"updated_at": datetime.now(timezone.utc).isoformat(), "updated_by": user["id"]}
+    
+    for field in allowed_fields:
+        if field in data:
+            before[field] = customer.get(field)
+            update_fields[field] = data[field]
+    
+    await db.customers.update_one({"id": customer_id}, {"$set": update_fields})
+    await create_audit_log("customer", customer_id, "admin_edit", user["id"], user["full_name"], before=before, after={k: v for k, v in update_fields.items() if k != "updated_at" and k != "updated_by"})
+    
+    return {"message": "Customer updated by admin"}
+
+
 # ==================== FIELD OVERRIDE (Manager/Admin) ====================
 @api_router.post("/loans/override-field")
 async def override_loan_field(data: FieldOverrideRequest, user: dict = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN))):
