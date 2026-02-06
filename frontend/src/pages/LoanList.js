@@ -382,14 +382,9 @@ export default function LoanList() {
                   data-testid={`payment-toggle-${loan.id}-${idx + 1}`}
                 />
                 {isAdmin && (
-                  <>
-                    <button onClick={(e) => { e.stopPropagation(); setEditingPayment(payment); setEditAmount(payment.amount_due?.toString() || ''); setEditPaymentOpen(true); }} className="p-0.5 hover:bg-gray-200 rounded" title="Edit payment">
-                      <Pencil className="w-3 h-3 text-blue-500" />
-                    </button>
-                    <button onClick={(e) => handleDeletePayment(e, loan.id, payment.id)} className="p-0.5 hover:bg-gray-200 rounded" title="Delete payment">
-                      <Trash2 className="w-3 h-3 text-red-500" />
-                    </button>
-                  </>
+                  <button onClick={(e) => { e.stopPropagation(); setEditingPayment(payment); setEditAmount(payment.amount_due?.toString() || ''); setEditPaymentOpen(true); }} className="p-0.5 hover:bg-gray-200 rounded" title="Edit payment">
+                    <Pencil className="w-3 h-3 text-blue-500" />
+                  </button>
                 )}
               </div>
             );
