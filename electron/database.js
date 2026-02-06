@@ -1029,6 +1029,6 @@ class EasyMoneyDatabase {
     const newStatus = newBalance === 0 ? 'paid' : 'open';
     this.db.prepare('UPDATE loans SET outstanding_balance = ?, status = ? WHERE id = ?').run(newBalance, newStatus, loanId);
   }
-
+}
 
 module.exports = EasyMoneyDatabase;
