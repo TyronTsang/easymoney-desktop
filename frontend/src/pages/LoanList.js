@@ -360,9 +360,16 @@ export default function LoanList() {
         R {loan.outstanding_balance?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}
       </TableCell>
       <TableCell>
-        <Badge className={loan.status === 'paid' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-amber-100 text-amber-700 border-amber-200'}>
-          {loan.status === 'paid' ? 'Paid' : 'Open'}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge className={loan.status === 'paid' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-amber-100 text-amber-700 border-amber-200'}>
+            {loan.status === 'paid' ? 'Paid' : 'Open'}
+          </Badge>
+          {isAdmin && (
+            <button onClick={(e) => handleDeleteLoan(e, loan.id)} className="p-1 hover:bg-red-100 rounded" title="Delete loan (Admin)">
+              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+            </button>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
