@@ -237,19 +237,14 @@ export default function LoanList() {
         loan.customer_mandate_id?.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
       
-      // Security: Employees can only see today's loans unless they search with full 13-digit ID
+      // Show only today's loans by default. Full 13-digit ID search shows all matching loans.
       let matchesDateRestriction = true;
-      if (user?.role === 'employee') {
-        const today = new Date().toISOString().split('T')[0];
-        const loanDate = loan.loan_date || loan.created_at?.split('T')[0];
-        
-        // If searching with full 13-digit ID, show all matching loans
-        const isFullIdSearch = search.length === 13 && /^\d{13}$/.test(search);
-        
-        // Otherwise, only show today's loans
-        if (!isFullIdSearch) {
-          matchesDateRestriction = loanDate === today;
-        }
+      const today = new Date().toISOString().split('T')[0];
+      const loanDate = loan.loan_date || loan.created_at?.split('T')[0];
+      const isFullIdSearch = search.length === 13 && /^\d{13}$/.test(search);
+      
+      if (!isFullIdSearch) {
+        matchesDateRestriction = loanDate === today;
       }
       
       return matchesSearch && matchesStatus && matchesDateRestriction;
