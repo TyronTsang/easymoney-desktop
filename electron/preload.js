@@ -47,13 +47,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('db:archiveEntity', entityType, entityId, reason, userId),
   
   // Export
-  exportData: (exportType, userId) => ipcRenderer.invoke('db:exportData', exportType, userId),
+  exportData: (exportType, userId, dateRange) => ipcRenderer.invoke('db:exportData', exportType, userId, dateRange),
   
   // Admin operations
   adminEditPayment: (paymentId, data) => ipcRenderer.invoke('db:adminEditPayment', paymentId, data),
   adminDeleteLoan: (loanId) => ipcRenderer.invoke('db:adminDeleteLoan', loanId),
   adminEditLoan: (loanId, data) => ipcRenderer.invoke('db:adminEditLoan', loanId, data),
   adminEditCustomer: (customerId, data) => ipcRenderer.invoke('db:adminEditCustomer', customerId, data),
+  topUpLoan: (loanId, newPrincipal, userId) => ipcRenderer.invoke('db:topUpLoan', loanId, newPrincipal, userId),
+  findExistingCustomer: (idNumber) => ipcRenderer.invoke('db:findExistingCustomer', idNumber),
   
   // Dialogs
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
