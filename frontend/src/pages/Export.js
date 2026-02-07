@@ -89,18 +89,11 @@ export default function Export() {
       
       // In Electron mode, use folder dialog and export directly
       if (window.electronAPI) {
-        let folder = selectedFolder;
-        if (!folder) {
-          folder = await window.electronAPI.selectFolder();
-          if (!folder) {
-            setLoading(false);
-            return;
-          }
-          setSelectedFolder(folder);
-        }
-        const result = await window.electronAPI.exportData(exportType, user?.id || '');
+        const result = await window.electronAPI.exportData(exportType, user?.id || '', dateRange);
         if (result?.success) {
-          toast.success(`Exported to ${result.filePath || folder}`);
+          toast.success(`Exported to ${result.filePath}`);
+        } else if (result?.error === 'Export cancelled') {
+          // User cancelled folder selection
         } else {
           toast.error(result?.error || 'Export failed');
         }
