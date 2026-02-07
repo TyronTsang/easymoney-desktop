@@ -1050,7 +1050,70 @@ async def admin_edit_customer(customer_id: str, data: dict = Body(...), user: di
     return {"message": "Customer updated by admin"}
 
 
-# ==================== FIELD OVERRIDE (Manager/Admin) ====================
+# ==================== LOAN TOP-UP (Admin only) ====================
+class TopUpRequest(BaseModel):
+    loan_id: str
+    new_principal: float
+
+@api_router.post("/loans/top-up")
+async def top_up_loan(data: TopUpRequest, user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin top up an existing open loan"""
+    loan = await db.loans.find_one({"id": data.loan_id}, {"_id": 0})
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    if loan["status"] != "open":
+        raise HTTPException(status_code=400, detail="Can only top up open loans")
+    if data.new_principal <= loan["principal_amount"]:
+        raise HTTPException(status_code=400, detail="New amount must be greater than current loan amount")
+    if data.new_principal > 8000:
+        raise HTTPException(status_code=400, detail="Loan amount cannot exceed R8000")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    old_principal = loan["principal_amount"]
+    calc = calculate_loan(data.new_principal, loan["repayment_plan_code"])
+    
+    # Get current payments and calculate paid amount
+    payments = await db.payments.find({"loan_id": data.loan_id}, {"_id": 0}).to_list(100)
+    paid_amount = sum(p["amount_due"] for p in payments if p.get("is_paid"))
+    new_outstanding = round(calc["total_repayable"] - paid_amount, 2)
+    
+    # Update loan
+    await db.loans.update_one({"id": data.loan_id}, {"$set": {
+        "principal_amount": data.new_principal,
+        "interest_rate": calc["interest_rate"],
+        "service_fee": calc["service_fee"],
+        "total_repayable": calc["total_repayable"],
+        "installment_amount": calc["installment_amount"],
+        "outstanding_balance": new_outstanding,
+        "updated_at": now, "updated_by": user["id"]
+    }})
+    
+    # Update unpaid payment amounts
+    new_installment = calc["installment_amount"]
+    for p in payments:
+        if not p.get("is_paid"):
+            await db.payments.update_one({"id": p["id"]}, {"$set": {"amount_due": new_installment}})
+    
+    await create_audit_log("loan", data.loan_id, "top_up", user["id"], user["full_name"],
+                           before={"principal_amount": old_principal},
+                           after={"principal_amount": data.new_principal, "new_total": calc["total_repayable"]})
+    
+    return {"message": "Loan topped up successfully", "old_principal": old_principal,
+            "new_principal": data.new_principal, "new_total": calc["total_repayable"],
+            "new_outstanding": new_outstanding}
+
+
+# ==================== FIND EXISTING CUSTOMER ====================
+class FindCustomerRequest(BaseModel):
+    id_number: str
+
+@api_router.post("/customers/find-existing")
+async def find_existing_customer(data: FindCustomerRequest, user: dict = Depends(get_current_user)):
+    """Find existing customer by ID number"""
+    customer = await db.customers.find_one({"id_number": data.id_number, "archived_at": None}, {"_id": 0})
+    if customer:
+        return {"id": customer["id"]}
+    return None
 @api_router.post("/loans/override-field")
 async def override_loan_field(data: FieldOverrideRequest, user: dict = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN))):
     """Override locked loan field (Manager/Admin only with reason)"""
