@@ -1,6 +1,6 @@
 {
   "name": "easymoney-desktop",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "EasyMoneyLoans Secure Desktop Application",
   "main": "main.js",
   "type": "commonjs",
