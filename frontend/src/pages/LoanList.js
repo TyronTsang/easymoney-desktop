@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { RefreshCw, Plus, Search, Zap, Lock, Filter, ChevronUp, ChevronDown, AlertCircle, Trash2, Pencil } from 'lucide-react';
+import { RefreshCw, Plus, Search, Zap, Lock, Filter, ChevronUp, ChevronDown, AlertCircle, Trash2, Pencil, ArrowUpCircle, UserCog } from 'lucide-react';
 
 export default function LoanList() {
   const { api, user } = useAuth();
@@ -47,23 +47,22 @@ export default function LoanList() {
 
   // New Loan Form State
   const [loanForm, setLoanForm] = useState({
-    // Customer fields
-    client_name: '',
-    id_number: '',
-    mandate_id: '',
-    cell_phone: '',
-    sassa_end_date: '',
-    // Loan fields
-    principal_amount: '',
-    repayment_plan_code: '1',
-    // Existing customer
-    existing_customer_id: ''
+    client_name: '', id_number: '', mandate_id: '', cell_phone: '', sassa_end_date: '',
+    principal_amount: '', repayment_plan_code: '1', existing_customer_id: ''
   });
   const [formLoading, setFormLoading] = useState(false);
   const [useExistingCustomer, setUseExistingCustomer] = useState(false);
+  
+  // Admin modals
   const [editPaymentOpen, setEditPaymentOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [editAmount, setEditAmount] = useState('');
+  const [editCustomerOpen, setEditCustomerOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editCustomerForm, setEditCustomerForm] = useState({ client_name: '', id_number: '', cell_phone: '', mandate_id: '' });
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [topUpLoan, setTopUpLoan] = useState(null);
+  const [topUpAmount, setTopUpAmount] = useState('');
 
   const isAdmin = user?.role === 'admin';
   const canViewFullId = ['manager', 'admin'].includes(user?.role);
@@ -84,16 +83,10 @@ export default function LoanList() {
     }
   }, [api]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    fetchData();
-  };
+  const handleRefresh = () => { setLoading(true); fetchData(); };
 
-  // Calculate loan preview
   const calculateLoan = () => {
     const principal = parseFloat(loanForm.principal_amount) || 0;
     const interest = principal * 0.4;
@@ -111,7 +104,6 @@ export default function LoanList() {
     try {
       let customerId = loanForm.existing_customer_id;
 
-      // Create new customer if not using existing
       if (!useExistingCustomer) {
         if (!loanForm.client_name || !loanForm.id_number || !loanForm.mandate_id) {
           toast.error('Please fill in all customer fields');
@@ -119,14 +111,22 @@ export default function LoanList() {
           return;
         }
 
-        const customerRes = await api().post('/customers', {
-          client_name: loanForm.client_name,
-          id_number: loanForm.id_number,
-          mandate_id: loanForm.mandate_id,
-          cell_phone: loanForm.cell_phone || null,
-          sassa_end_date: loanForm.sassa_end_date || null
-        });
-        customerId = customerRes.data.id;
+        // Check if customer already exists by ID number
+        const existingCustomer = customers.find(c => c.id_number === loanForm.id_number);
+        if (existingCustomer) {
+          // Use existing customer instead of creating a new one
+          customerId = existingCustomer.id;
+          toast.info(`Using existing customer: ${existingCustomer.client_name}`);
+        } else {
+          const customerRes = await api().post('/customers', {
+            client_name: loanForm.client_name,
+            id_number: loanForm.id_number,
+            mandate_id: loanForm.mandate_id,
+            cell_phone: loanForm.cell_phone || null,
+            sassa_end_date: loanForm.sassa_end_date || null
+          });
+          customerId = customerRes.data.id;
+        }
       }
 
       if (!customerId) {
@@ -135,7 +135,6 @@ export default function LoanList() {
         return;
       }
 
-      // Create loan
       await api().post('/loans', {
         customer_id: customerId,
         principal_amount: parseFloat(loanForm.principal_amount),
@@ -145,84 +144,45 @@ export default function LoanList() {
 
       toast.success('Loan created successfully!');
       setNewLoanOpen(false);
-      setLoanForm({
-        client_name: '',
-        id_number: '',
-        mandate_id: '',
-        cell_phone: '',
-        sassa_end_date: '',
-        principal_amount: '',
-        repayment_plan_code: '1',
-        existing_customer_id: ''
-      });
+      setLoanForm({ client_name: '', id_number: '', mandate_id: '', cell_phone: '', sassa_end_date: '', principal_amount: '', repayment_plan_code: '1', existing_customer_id: '' });
       setUseExistingCustomer(false);
       fetchData();
     } catch (err) {
       let errorMsg = 'Failed to create loan';
-      
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          errorMsg = detail[0]?.msg || detail[0]?.message || errorMsg;
-        } else if (typeof detail === 'string') {
-          errorMsg = detail;
-        }
-      } else if (err.message) {
-        errorMsg = err.message;
-      }
-      
+        errorMsg = Array.isArray(detail) ? (detail[0]?.msg || detail[0]?.message || errorMsg) : typeof detail === 'string' ? detail : errorMsg;
+      } else if (err.message) { errorMsg = err.message; }
       toast.error(String(errorMsg));
-    } finally {
-      setFormLoading(false);
-    }
+    } finally { setFormLoading(false); }
   };
 
   const handleMarkPayment = async (e, loanId, installmentNumber, currentlyPaid) => {
-    if (e && e.stopPropagation) {
-      e.stopPropagation();
-    }
-    
-    // Find the loan to check if multi-payment
+    if (e?.stopPropagation) e.stopPropagation();
     const loan = loans.find(l => l.id === loanId);
     const isMultiPayment = loan && loan.repayment_plan_code > 1;
     const allPaid = loan?.payments?.every(p => p.is_paid);
 
-    // For monthly (single payment) or fully paid multi-payment loans, block unmarking
-    if (currentlyPaid && (!isMultiPayment || allPaid)) {
+    if (currentlyPaid && (!isMultiPayment || allPaid) && !isAdmin) {
       toast.error('Payments cannot be unmarked');
       return;
     }
 
     try {
       if (currentlyPaid) {
-        // Unmark payment for multi-payment plans
-        await api().post('/payments/unmark-paid', {
-          loan_id: loanId,
-          installment_number: installmentNumber
-        });
+        await api().post('/payments/unmark-paid', { loan_id: loanId, installment_number: installmentNumber });
         toast.success(`Payment ${installmentNumber} unmarked`);
       } else {
-        await api().post('/payments/mark-paid', {
-          loan_id: loanId,
-          installment_number: installmentNumber
-        });
+        await api().post('/payments/mark-paid', { loan_id: loanId, installment_number: installmentNumber });
         toast.success(`Payment ${installmentNumber} marked as paid`);
       }
       fetchData();
     } catch (err) {
       let errorMsg = 'Failed to update payment';
-      
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          errorMsg = detail[0]?.msg || detail[0]?.message || errorMsg;
-        } else if (typeof detail === 'string') {
-          errorMsg = detail;
-        }
-      } else if (err.message) {
-        errorMsg = err.message;
-      }
-      
+        errorMsg = Array.isArray(detail) ? (detail[0]?.msg || detail[0]?.message || errorMsg) : typeof detail === 'string' ? detail : errorMsg;
+      } else if (err.message) { errorMsg = err.message; }
       toast.error(String(errorMsg));
     }
   };
@@ -237,7 +197,6 @@ export default function LoanList() {
         loan.customer_mandate_id?.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
       
-      // Show only today's loans by default. Full 13-digit ID search shows all matching loans.
       let matchesDateRestriction = true;
       const today = new Date().toISOString().split('T')[0];
       const loanDate = loan.loan_date || loan.created_at?.split('T')[0];
@@ -252,21 +211,14 @@ export default function LoanList() {
     .sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
-      if (sortField === 'created_at') {
-        aVal = new Date(aVal);
-        bVal = new Date(bVal);
-      }
+      if (sortField === 'created_at') { aVal = new Date(aVal); bVal = new Date(bVal); }
       if (sortDir === 'asc') return aVal > bVal ? 1 : -1;
       return aVal < bVal ? 1 : -1;
     });
 
   const toggleSort = (field) => {
-    if (sortField === field) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDir('desc');
-    }
+    if (sortField === field) { setSortDir(sortDir === 'asc' ? 'desc' : 'asc'); }
+    else { setSortField(field); setSortDir('desc'); }
   };
 
   const renderSortIcon = (field) => {
@@ -274,13 +226,11 @@ export default function LoanList() {
     return sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
 
-  // Group loans by customer for duplicate detection
+  // Group loans by customer
   const groupedByCustomer = {};
   filteredLoans.forEach(loan => {
     const key = loan.customer_id_number || loan.customer_name;
-    if (!groupedByCustomer[key]) {
-      groupedByCustomer[key] = [];
-    }
+    if (!groupedByCustomer[key]) groupedByCustomer[key] = [];
     groupedByCustomer[key].push(loan);
   });
 
@@ -288,7 +238,6 @@ export default function LoanList() {
     setExpandedCustomers(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Build display rows: for customers with multiple loans, show first loan + expand toggle
   const displayRows = [];
   Object.entries(groupedByCustomer).forEach(([key, customerLoans]) => {
     if (customerLoans.length === 1) {
@@ -298,7 +247,7 @@ export default function LoanList() {
     }
   });
 
-  // Admin: Delete entire loan
+  // Admin: Delete loan
   const handleDeleteLoan = async (e, loanId) => {
     if (e) e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this entire loan and all its payments? This action is logged and cannot be undone.')) return;
@@ -325,6 +274,62 @@ export default function LoanList() {
     }
   };
 
+  // Admin: Edit customer
+  const openEditCustomer = (e, loan) => {
+    if (e) e.stopPropagation();
+    setEditingCustomer({ id: loan.customer_id, name: loan.customer_name });
+    setEditCustomerForm({
+      client_name: loan.customer_name || '',
+      id_number: loan.customer_id_number || '',
+      cell_phone: loan.customer_cell_phone || '',
+      mandate_id: loan.mandate_id || loan.customer_mandate_id || ''
+    });
+    setEditCustomerOpen(true);
+  };
+
+  const handleSaveCustomer = async () => {
+    if (!editingCustomer) return;
+    try {
+      await api().put(`/admin/customers/${editingCustomer.id}`, editCustomerForm);
+      toast.success('Customer details updated');
+      setEditCustomerOpen(false);
+      setEditingCustomer(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Failed to update customer');
+    }
+  };
+
+  // Admin: Top up loan
+  const openTopUp = (e, loan) => {
+    if (e) e.stopPropagation();
+    setTopUpLoan(loan);
+    setTopUpAmount(loan.principal_amount?.toString() || '');
+    setTopUpOpen(true);
+  };
+
+  const handleTopUp = async () => {
+    if (!topUpLoan) return;
+    const newAmount = parseFloat(topUpAmount);
+    if (!newAmount || newAmount <= topUpLoan.principal_amount) {
+      toast.error(`New amount must be greater than current R${topUpLoan.principal_amount.toFixed(2)}`);
+      return;
+    }
+    if (newAmount > 8000) {
+      toast.error('Loan amount cannot exceed R8,000');
+      return;
+    }
+    try {
+      await api().post('/loans/top-up', { loan_id: topUpLoan.id, new_principal: newAmount });
+      toast.success(`Loan topped up to R${newAmount.toFixed(2)}`);
+      setTopUpOpen(false);
+      setTopUpLoan(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Failed to top up loan');
+    }
+  };
+
   const calc = calculateLoan();
 
   const renderLoanRow = (loan, isNested) => (
@@ -342,20 +347,25 @@ export default function LoanList() {
         <div className="flex items-center gap-2">
           {loan.fraud_flags?.includes('QUICK_CLOSE') && <Zap className="w-4 h-4 text-amber-500" />}
           <span className="font-medium text-gray-900">{loan.customer_name}</span>
+          {isAdmin && (
+            <button onClick={(e) => openEditCustomer(e, loan)} className="p-0.5 hover:bg-blue-100 rounded" title="Edit customer details">
+              <UserCog className="w-3 h-3 text-blue-500" />
+            </button>
+          )}
         </div>
       </TableCell>
       <TableCell className="font-mono text-sm text-gray-600">
         {canViewFullId ? loan.customer_id_number : loan.customer_id_number_masked}
       </TableCell>
       <TableCell className="text-sm text-gray-600">{loan.customer_cell_phone || '-'}</TableCell>
-      <TableCell className="text-sm text-gray-600">{loan.customer_mandate_id || '-'}</TableCell>
+      <TableCell className="text-sm text-gray-600">{loan.customer_mandate_id || loan.mandate_id || '-'}</TableCell>
       <TableCell className="text-sm text-gray-600">{loan.customer_sassa_end || '-'}</TableCell>
       <TableCell className="font-mono text-gray-900">R {loan.principal_amount?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}</TableCell>
       <TableCell className="text-sm">
         <span className="text-gray-600">{planNames[loan.repayment_plan_code]?.split(' ')[0]}</span>
         <span className="text-gray-400 text-xs ml-1">({loan.repayment_plan_code}x)</span>
       </TableCell>
-      <TableCell className="font-mono text-gray-900">R {loan.total_amount?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}</TableCell>
+      <TableCell className="font-mono text-gray-900">R {loan.total_repayable?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}</TableCell>
       <TableCell className={`font-mono font-semibold ${loan.outstanding_balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
         R {loan.outstanding_balance?.toLocaleString('en-ZA', {minimumFractionDigits: 2})}
       </TableCell>
@@ -365,9 +375,16 @@ export default function LoanList() {
             {loan.status === 'paid' ? 'Paid' : 'Open'}
           </Badge>
           {isAdmin && (
-            <button onClick={(e) => handleDeleteLoan(e, loan.id)} className="p-1 hover:bg-red-100 rounded" title="Delete loan (Admin)">
-              <Trash2 className="w-3.5 h-3.5 text-red-500" />
-            </button>
+            <div className="flex items-center gap-1">
+              {loan.status === 'open' && (
+                <button onClick={(e) => openTopUp(e, loan)} className="p-1 hover:bg-green-100 rounded" title="Top up loan (Admin)" data-testid={`top-up-btn-${loan.id}`}>
+                  <ArrowUpCircle className="w-3.5 h-3.5 text-green-600" />
+                </button>
+              )}
+              <button onClick={(e) => handleDeleteLoan(e, loan.id)} className="p-1 hover:bg-red-100 rounded" title="Delete loan (Admin)" data-testid={`delete-loan-btn-${loan.id}`}>
+                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              </button>
+            </div>
           )}
         </div>
       </TableCell>
@@ -407,9 +424,7 @@ export default function LoanList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-heading font-bold tracking-tight text-gray-900">Loan Register</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {filteredLoans.length} loans found
-          </p>
+          <p className="text-gray-500 text-sm mt-1">{filteredLoans.length} loans found</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={handleRefresh} className="gap-2" data-testid="refresh-btn">
@@ -491,21 +506,15 @@ export default function LoanList() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
-                      Loading loans...
-                    </TableCell>
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">Loading loans...</TableCell>
                   </TableRow>
                 ) : filteredLoans.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
-                      No loans found
-                    </TableCell>
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">No loans found</TableCell>
                   </TableRow>
                 ) : (
                   displayRows.map((row) => {
-                    if (row.type === 'single') {
-                      return renderLoanRow(row.loan, false);
-                    }
+                    if (row.type === 'single') return renderLoanRow(row.loan, false);
                     const { key, loans: customerLoans, expanded } = row;
                     const firstLoan = customerLoans[0];
                     return (
@@ -546,16 +555,12 @@ export default function LoanList() {
           </DialogHeader>
 
           <form onSubmit={handleCreateLoan} className="space-y-6">
-            {/* Customer Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium text-gray-900">Customer Details</h3>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">Existing customer?</span>
-                  <Switch
-                    checked={useExistingCustomer}
-                    onCheckedChange={setUseExistingCustomer}
-                  />
+                  <Switch checked={useExistingCustomer} onCheckedChange={setUseExistingCustomer} />
                 </div>
               </div>
 
@@ -569,9 +574,7 @@ export default function LoanList() {
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.client_name} - {c.id_number}
-                      </SelectItem>
+                      <SelectItem key={c.id} value={c.id}>{c.client_name} - {c.id_number}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -579,97 +582,43 @@ export default function LoanList() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 space-y-2">
                     <Label>Client Name *</Label>
-                    <Input
-                      value={loanForm.client_name}
-                      onChange={(e) => setLoanForm({...loanForm, client_name: e.target.value})}
-                      placeholder="Full name"
-                      className="bg-gray-50"
-                      data-testid="client-name-input"
-                      required={!useExistingCustomer}
-                    />
+                    <Input value={loanForm.client_name} onChange={(e) => setLoanForm({...loanForm, client_name: e.target.value})} placeholder="Full name" className="bg-gray-50" data-testid="client-name-input" required={!useExistingCustomer} />
                   </div>
                   <div className="space-y-2">
                     <Label>SA ID Number *</Label>
                     <div className="relative">
-                      <Input
-                        value={loanForm.id_number}
-                        onChange={(e) => setLoanForm({...loanForm, id_number: e.target.value})}
-                        placeholder="13-digit ID"
-                        maxLength={13}
-                        className="bg-gray-50 font-mono pr-16"
-                        data-testid="id-number-input"
-                        required={!useExistingCustomer}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">
-                        {loanForm.id_number.length}/13
-                      </span>
+                      <Input value={loanForm.id_number} onChange={(e) => setLoanForm({...loanForm, id_number: e.target.value})} placeholder="13-digit ID" maxLength={13} className="bg-gray-50 font-mono pr-16" data-testid="id-number-input" required={!useExistingCustomer} />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">{loanForm.id_number.length}/13</span>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Mandate ID *</Label>
-                    <Input
-                      value={loanForm.mandate_id}
-                      onChange={(e) => setLoanForm({...loanForm, mandate_id: e.target.value})}
-                      placeholder="Mandate reference"
-                      className="bg-gray-50"
-                      data-testid="mandate-id-input"
-                      required={!useExistingCustomer}
-                    />
+                    <Input value={loanForm.mandate_id} onChange={(e) => setLoanForm({...loanForm, mandate_id: e.target.value})} placeholder="Mandate reference" className="bg-gray-50" data-testid="mandate-id-input" required={!useExistingCustomer} />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label>Cell Phone (optional)</Label>
-                    <Input
-                      type="tel"
-                      value={loanForm.cell_phone}
-                      onChange={(e) => setLoanForm({...loanForm, cell_phone: e.target.value})}
-                      placeholder="0821234567"
-                      maxLength={10}
-                      className="bg-gray-50"
-                      data-testid="cell-phone-input"
-                    />
+                    <Input type="tel" value={loanForm.cell_phone} onChange={(e) => setLoanForm({...loanForm, cell_phone: e.target.value})} placeholder="0821234567" maxLength={10} className="bg-gray-50" data-testid="cell-phone-input" />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label>SASSA End Date (optional)</Label>
-                    <Input
-                      type="date"
-                      value={loanForm.sassa_end_date}
-                      onChange={(e) => setLoanForm({...loanForm, sassa_end_date: e.target.value})}
-                      className="bg-gray-50"
-                      data-testid="sassa-date-input"
-                    />
+                    <Input type="date" value={loanForm.sassa_end_date} onChange={(e) => setLoanForm({...loanForm, sassa_end_date: e.target.value})} className="bg-gray-50" data-testid="sassa-date-input" />
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Loan Section */}
             <div className="space-y-4 pt-4 border-t border-gray-200">
               <h3 className="font-medium text-gray-900">Loan Details</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Loan Amount (R) *</Label>
-                  <Input
-                    type="number"
-                    value={loanForm.principal_amount}
-                    onChange={(e) => setLoanForm({...loanForm, principal_amount: e.target.value})}
-                    placeholder="Min: R400 - Max: R8000"
-                    min="400"
-                    max="8000"
-                    className="bg-gray-50 font-mono"
-                    data-testid="loan-amount-input"
-                    required
-                  />
+                  <Input type="number" value={loanForm.principal_amount} onChange={(e) => setLoanForm({...loanForm, principal_amount: e.target.value})} placeholder="Min: R400 - Max: R8000" min="400" max="8000" className="bg-gray-50 font-mono" data-testid="loan-amount-input" required />
                   <p className="text-xs text-gray-500">Loan amount must be between R400 and R8000</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Repayment Plan *</Label>
-                  <Select
-                    value={loanForm.repayment_plan_code}
-                    onValueChange={(v) => setLoanForm({...loanForm, repayment_plan_code: v})}
-                  >
-                    <SelectTrigger className="bg-gray-50" data-testid="plan-select">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={loanForm.repayment_plan_code} onValueChange={(v) => setLoanForm({...loanForm, repayment_plan_code: v})}>
+                    <SelectTrigger className="bg-gray-50" data-testid="plan-select"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1">Monthly (1 payment)</SelectItem>
                       <SelectItem value="2">Fortnightly (2 payments)</SelectItem>
@@ -679,7 +628,6 @@ export default function LoanList() {
                 </div>
               </div>
 
-              {/* Loan Preview */}
               {loanForm.principal_amount && (
                 <div className="p-4 bg-gray-50 rounded-lg space-y-2">
                   <h4 className="text-sm font-medium text-gray-700">Loan Summary</h4>
@@ -691,17 +639,14 @@ export default function LoanList() {
                     <div className="text-gray-700 font-medium">Total:</div>
                     <div className="font-mono font-bold text-red-600">R {calc.total.toFixed(2)}</div>
                     <div className="text-gray-500">Per installment:</div>
-                    <div className="font-mono text-gray-900">R {calc.installment.toFixed(2)} × {calc.planCode}</div>
+                    <div className="font-mono text-gray-900">R {calc.installment.toFixed(2)} x {calc.planCode}</div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => setNewLoanOpen(false)}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setNewLoanOpen(false)}>Cancel</Button>
               <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700" disabled={formLoading} data-testid="create-loan-submit">
                 {formLoading ? 'Creating...' : 'Create Loan'}
               </Button>
@@ -721,9 +666,66 @@ export default function LoanList() {
               <Label>Amount Due (R)</Label>
               <Input type="number" step="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} data-testid="edit-payment-amount" />
             </div>
-            <Button onClick={handleEditPayment} className="w-full bg-blue-600 hover:bg-blue-700 text-white" data-testid="save-payment-edit-btn">
-              Save Changes
-            </Button>
+            <Button onClick={handleEditPayment} className="w-full bg-blue-600 hover:bg-blue-700 text-white" data-testid="save-payment-edit-btn">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Edit Customer Dialog */}
+      <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>
+        <DialogContent className="max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle>Edit Customer Details</DialogTitle>
+            <DialogDescription>Update customer information (Admin only)</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Client Name</Label>
+              <Input value={editCustomerForm.client_name} onChange={(e) => setEditCustomerForm({...editCustomerForm, client_name: e.target.value})} data-testid="edit-customer-name" />
+            </div>
+            <div className="space-y-2">
+              <Label>ID Number</Label>
+              <Input value={editCustomerForm.id_number} onChange={(e) => setEditCustomerForm({...editCustomerForm, id_number: e.target.value})} maxLength={13} className="font-mono" data-testid="edit-customer-id" />
+            </div>
+            <div className="space-y-2">
+              <Label>Cell Phone</Label>
+              <Input value={editCustomerForm.cell_phone} onChange={(e) => setEditCustomerForm({...editCustomerForm, cell_phone: e.target.value})} maxLength={10} data-testid="edit-customer-phone" />
+            </div>
+            <div className="space-y-2">
+              <Label>Mandate ID</Label>
+              <Input value={editCustomerForm.mandate_id} onChange={(e) => setEditCustomerForm({...editCustomerForm, mandate_id: e.target.value})} data-testid="edit-customer-mandate" />
+            </div>
+            <Button onClick={handleSaveCustomer} className="w-full bg-blue-600 hover:bg-blue-700 text-white" data-testid="save-customer-edit-btn">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Top Up Loan Dialog */}
+      <Dialog open={topUpOpen} onOpenChange={setTopUpOpen}>
+        <DialogContent className="max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle>Top Up Loan</DialogTitle>
+            <DialogDescription>Increase the loan amount for {topUpLoan?.customer_name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-lg text-sm space-y-1">
+              <div className="flex justify-between"><span className="text-gray-500">Current Loan:</span><span className="font-mono font-medium">R {topUpLoan?.principal_amount?.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Total Repayable:</span><span className="font-mono">R {topUpLoan?.total_repayable?.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Outstanding:</span><span className="font-mono text-red-600">R {topUpLoan?.outstanding_balance?.toFixed(2)}</span></div>
+            </div>
+            <div className="space-y-2">
+              <Label>New Loan Amount (R)</Label>
+              <Input type="number" min={topUpLoan?.principal_amount ? topUpLoan.principal_amount + 1 : 0} max="8000" step="100" value={topUpAmount} onChange={(e) => setTopUpAmount(e.target.value)} placeholder="Enter new amount" className="font-mono" data-testid="top-up-amount" />
+              <p className="text-xs text-gray-500">Must be greater than R{topUpLoan?.principal_amount?.toFixed(2)} and max R8,000</p>
+            </div>
+            {topUpAmount && parseFloat(topUpAmount) > (topUpLoan?.principal_amount || 0) && (
+              <div className="p-3 bg-green-50 rounded-lg text-sm space-y-1 border border-green-200">
+                <div className="flex justify-between"><span className="text-gray-600">New Principal:</span><span className="font-mono font-medium">R {parseFloat(topUpAmount).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">New Total (40% + R12):</span><span className="font-mono font-bold text-green-700">R {((parseFloat(topUpAmount) * 1.4) + 12).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Top-up Difference:</span><span className="font-mono text-blue-600">+R {(parseFloat(topUpAmount) - (topUpLoan?.principal_amount || 0)).toFixed(2)}</span></div>
+              </div>
+            )}
+            <Button onClick={handleTopUp} className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="confirm-top-up-btn">Confirm Top Up</Button>
           </div>
         </DialogContent>
       </Dialog>
