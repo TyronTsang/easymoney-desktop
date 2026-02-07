@@ -649,6 +649,7 @@ async def create_customer(data: CustomerCreate, user: dict = Depends(get_current
         "id_number": data.id_number,
         "mandate_id": data.mandate_id,
         "cell_phone": data.cell_phone,
+        "sassa_end_date": data.sassa_end_date,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by": user["id"],
         "updated_at": None,
