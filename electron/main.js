@@ -300,7 +300,7 @@ ipcMain.handle('db:adminEditCustomer', async (event, customerId, data) => {
 });
 
 // --- Export ---
-ipcMain.handle('db:exportData', async (event, exportType, userId) => {
+ipcMain.handle('db:exportData', async (event, exportType, userId, dateRange) => {
   try {
     // First ask user to select folder
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -313,9 +313,27 @@ ipcMain.handle('db:exportData', async (event, exportType, userId) => {
     }
 
     const folderPath = result.filePaths[0];
-    return await database.exportToExcel(exportType, folderPath, userId);
+    return await database.exportToExcel(exportType, folderPath, userId, dateRange);
   } catch (error) {
     return { success: false, error: error.message };
+  }
+});
+
+// --- Loan Top-Up ---
+ipcMain.handle('db:topUpLoan', async (event, loanId, newPrincipal, userId) => {
+  try {
+    return database.topUpLoan(loanId, newPrincipal, userId);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+});
+
+// --- Find Existing Customer ---
+ipcMain.handle('db:findExistingCustomer', async (event, idNumber) => {
+  try {
+    return database.findExistingCustomer(idNumber);
+  } catch (error) {
+    return null;
   }
 });
 
