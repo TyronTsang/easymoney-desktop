@@ -105,6 +105,7 @@ class CustomerCreate(BaseModel):
     id_number: str
     mandate_id: str
     cell_phone: Optional[str] = None
+    sassa_end_date: Optional[str] = None
     
     @field_validator('id_number')
     @classmethod
