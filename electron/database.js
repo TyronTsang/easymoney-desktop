@@ -815,7 +815,7 @@ class EasyMoneyDatabase {
   }
 
   // ==================== EXPORT ====================
-  exportToExcel(exportType, folderPath, userId) {
+  exportToExcel(exportType, folderPath, userId, dateRange) {
     const ExcelJS = require('exceljs');
     const user = this.getUser(userId);
     const workbook = new ExcelJS.Workbook();
@@ -824,29 +824,81 @@ class EasyMoneyDatabase {
       font: { bold: true, color: { argb: 'FFFFFFFF' } },
       fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' } }
     };
+
+    // Build date filter
+    let dateFrom = null;
+    let dateTo = null;
+    if (dateRange) {
+      const today = new Date();
+      dateTo = today.toISOString().split('T')[0];
+      if (dateRange === 'today') {
+        dateFrom = dateTo;
+      } else if (dateRange === 'week') {
+        const d = new Date(today); d.setDate(d.getDate() - 7);
+        dateFrom = d.toISOString().split('T')[0];
+      } else if (dateRange === 'month') {
+        const d = new Date(today); d.setMonth(d.getMonth() - 1);
+        dateFrom = d.toISOString().split('T')[0];
+      } else if (dateRange === 'all') {
+        dateFrom = null; dateTo = null;
+      } else if (typeof dateRange === 'object') {
+        dateFrom = dateRange.dateFrom;
+        dateTo = dateRange.dateTo;
+      }
+    }
+
+    const matchesDateFilter = (dateStr) => {
+      if (!dateFrom && !dateTo) return true;
+      const d = dateStr ? dateStr.slice(0, 10) : '';
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
+      return true;
+    };
     
     if (exportType === 'customers' || exportType === 'all') {
       const ws = workbook.addWorksheet('Customers');
       ws.columns = [
-        { header: 'ID', key: 'id', width: 40 },
         { header: 'Client Name', key: 'client_name', width: 25 },
-        { header: 'ID Number', key: 'id_number', width: 20 },
-        { header: 'Mandate ID', key: 'mandate_id', width: 20 },
-        { header: 'Created At', key: 'created_at', width: 25 },
+        { header: 'ID Number', key: 'id_number', width: 18 },
+        { header: 'Cell Phone', key: 'cell_phone', width: 15 },
+        { header: 'Mandate ID', key: 'mandate_id', width: 15 },
+        { header: 'SASSA End', key: 'sassa_end', width: 14 },
+        { header: 'Total Loans', key: 'total_loans', width: 12 },
+        { header: 'Open Loans', key: 'open_loans', width: 12 },
+        { header: 'Paid Loans', key: 'paid_loans', width: 12 },
+        { header: 'Total Borrowed', key: 'total_borrowed', width: 16 },
+        { header: 'Total Outstanding', key: 'total_outstanding', width: 18 },
+        { header: 'Created At', key: 'created_at', width: 20 },
         { header: 'Created By', key: 'created_by_name', width: 20 }
       ];
       
-      const customers = this.getCustomers();
+      const customers = this.db.prepare(`
+        SELECT c.*, u.full_name as created_by_name 
+        FROM customers c LEFT JOIN users u ON c.created_by = u.id
+        WHERE c.archived_at IS NULL
+      `).all().filter(c => matchesDateFilter(c.created_at));
+
       customers.forEach(c => {
+        const cLoans = this.db.prepare('SELECT * FROM loans WHERE customer_id = ? AND archived_at IS NULL').all(c.id);
+        const openL = cLoans.filter(l => l.status === 'open').length;
+        const paidL = cLoans.filter(l => l.status === 'paid').length;
+        const totalBorrowed = cLoans.reduce((s, l) => s + l.principal_amount, 0);
+        const totalOut = cLoans.reduce((s, l) => s + l.outstanding_balance, 0);
+        
         const row = ws.addRow({
-          id: c.id,
           client_name: c.client_name,
           id_number: c.id_number,
+          cell_phone: c.cell_phone || '',
           mandate_id: c.mandate_id,
-          created_at: c.created_at,
-          created_by_name: c.created_by_name
+          sassa_end: c.sassa_end_date || '',
+          total_loans: cLoans.length,
+          open_loans: openL,
+          paid_loans: paidL,
+          total_borrowed: `R${totalBorrowed.toFixed(2)}`,
+          total_outstanding: `R${totalOut.toFixed(2)}`,
+          created_at: c.created_at ? c.created_at.slice(0, 10) : '',
+          created_by_name: c.created_by_name || 'Unknown'
         });
-        // Format ID as text
         row.getCell('id_number').numFmt = '@';
       });
       
@@ -859,33 +911,54 @@ class EasyMoneyDatabase {
     if (exportType === 'loans' || exportType === 'all') {
       const ws = workbook.addWorksheet('Loans');
       ws.columns = [
-        { header: 'Loan ID', key: 'id', width: 40 },
-        { header: 'Customer Name', key: 'customer_name', width: 25 },
-        { header: 'Customer ID', key: 'customer_id_number', width: 20 },
-        { header: 'Principal', key: 'principal', width: 15 },
-        { header: 'Total Repayable', key: 'total', width: 15 },
-        { header: 'Outstanding', key: 'outstanding', width: 15 },
-        { header: 'Status', key: 'status', width: 12 },
-        { header: 'Plan', key: 'plan', width: 15 },
-        { header: 'Created At', key: 'created_at', width: 25 },
+        { header: 'Client Name', key: 'customer_name', width: 25 },
+        { header: 'ID Number', key: 'customer_id_number', width: 18 },
+        { header: 'Cell Phone', key: 'cell_phone', width: 15 },
+        { header: 'Mandate ID', key: 'mandate_id', width: 15 },
+        { header: 'Loan Date', key: 'loan_date', width: 14 },
+        { header: 'Loan Amount', key: 'principal', width: 14 },
+        { header: 'Interest (40%)', key: 'interest', width: 14 },
+        { header: 'Service Fee', key: 'service_fee', width: 12 },
+        { header: 'Total Repayable', key: 'total', width: 16 },
+        { header: 'Per Installment', key: 'installment', width: 16 },
+        { header: 'Outstanding', key: 'outstanding', width: 14 },
+        { header: 'Status', key: 'status', width: 10 },
+        { header: 'Plan', key: 'plan', width: 14 },
+        { header: 'SASSA End', key: 'sassa_end', width: 14 },
+        { header: 'Created At', key: 'created_at', width: 20 },
         { header: 'Created By', key: 'created_by_name', width: 20 }
       ];
       
       const planNames = { 1: 'Monthly', 2: 'Fortnightly', 4: 'Weekly' };
-      const loans = this.getLoans();
+      const loans = this.db.prepare(`
+        SELECT l.*, c.client_name as customer_name, c.id_number as customer_id_number, 
+               c.mandate_id, c.cell_phone as customer_cell_phone, c.sassa_end_date,
+               u.full_name as created_by_name
+        FROM loans l
+        JOIN customers c ON l.customer_id = c.id
+        LEFT JOIN users u ON l.created_by = u.id
+        WHERE l.archived_at IS NULL
+      `).all().filter(l => matchesDateFilter(l.created_at));
       
       loans.forEach(l => {
+        const interestAmount = l.principal_amount * l.interest_rate;
         const row = ws.addRow({
-          id: l.id,
           customer_name: l.customer_name,
           customer_id_number: l.customer_id_number,
+          cell_phone: l.customer_cell_phone || '',
+          mandate_id: l.mandate_id,
+          loan_date: l.loan_date || '',
           principal: `R${l.principal_amount.toFixed(2)}`,
+          interest: `R${interestAmount.toFixed(2)}`,
+          service_fee: `R${l.service_fee.toFixed(2)}`,
           total: `R${l.total_repayable.toFixed(2)}`,
+          installment: `R${l.installment_amount.toFixed(2)}`,
           outstanding: `R${l.outstanding_balance.toFixed(2)}`,
           status: l.status.toUpperCase(),
           plan: planNames[l.repayment_plan_code] || 'Unknown',
-          created_at: l.created_at,
-          created_by_name: l.created_by_name
+          sassa_end: l.sassa_end_date || '',
+          created_at: l.created_at ? l.created_at.slice(0, 10) : '',
+          created_by_name: l.created_by_name || 'Unknown'
         });
         row.getCell('customer_id_number').numFmt = '@';
       });
@@ -899,33 +972,40 @@ class EasyMoneyDatabase {
     if (exportType === 'payments' || exportType === 'all') {
       const ws = workbook.addWorksheet('Payments');
       ws.columns = [
-        { header: 'Payment ID', key: 'id', width: 40 },
-        { header: 'Loan ID', key: 'loan_id', width: 40 },
+        { header: 'Client Name', key: 'customer_name', width: 25 },
+        { header: 'ID Number', key: 'customer_id_number', width: 18 },
+        { header: 'Loan Amount', key: 'principal', width: 14 },
         { header: 'Installment #', key: 'installment', width: 12 },
-        { header: 'Amount Due', key: 'amount', width: 15 },
-        { header: 'Due Date', key: 'due_date', width: 25 },
+        { header: 'Amount Due', key: 'amount', width: 14 },
+        { header: 'Due Date', key: 'due_date', width: 14 },
         { header: 'Is Paid', key: 'is_paid', width: 10 },
-        { header: 'Paid At', key: 'paid_at', width: 25 },
+        { header: 'Paid At', key: 'paid_at', width: 20 },
         { header: 'Paid By', key: 'paid_by_name', width: 20 }
       ];
       
       const payments = this.db.prepare(`
-        SELECT p.*, u.full_name as paid_by_name 
+        SELECT p.*, u.full_name as paid_by_name,
+               c.client_name as customer_name, c.id_number as customer_id_number,
+               l.principal_amount
         FROM payments p 
         LEFT JOIN users u ON p.paid_by = u.id
-      `).all();
+        JOIN loans l ON p.loan_id = l.id
+        JOIN customers c ON l.customer_id = c.id
+      `).all().filter(p => matchesDateFilter(p.created_at));
       
       payments.forEach(p => {
-        ws.addRow({
-          id: p.id,
-          loan_id: p.loan_id,
+        const row = ws.addRow({
+          customer_name: p.customer_name,
+          customer_id_number: p.customer_id_number,
+          principal: `R${p.principal_amount.toFixed(2)}`,
           installment: p.installment_number,
           amount: `R${p.amount_due.toFixed(2)}`,
-          due_date: p.due_date,
+          due_date: p.due_date ? p.due_date.slice(0, 10) : '',
           is_paid: p.is_paid ? 'Yes' : 'No',
-          paid_at: p.paid_at || '',
+          paid_at: p.paid_at ? p.paid_at.slice(0, 10) : '',
           paid_by_name: p.paid_by_name || ''
         });
+        row.getCell('customer_id_number').numFmt = '@';
       });
       
       ws.getRow(1).eachCell(cell => {
@@ -937,7 +1017,8 @@ class EasyMoneyDatabase {
     // Generate filename
     const date = new Date().toISOString().slice(0, 10);
     const branch = (user.branch || 'Unknown').replace(/\s/g, '_');
-    const filename = `Loans_${date}_${branch}.xlsx`;
+    const rangeLabel = dateFrom ? `_${dateFrom}_to_${dateTo}` : '';
+    const filename = `Loans_${date}_${branch}${rangeLabel}.xlsx`;
     const filePath = path.join(folderPath, filename);
     
     // Save file
