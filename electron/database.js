@@ -1024,6 +1024,57 @@ class EasyMoneyDatabase {
     return { message: 'Customer updated by admin' };
   }
 
+  topUpLoan(loanId, newPrincipal, userId) {
+    const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
+    if (!loan) throw new Error('Loan not found');
+    if (loan.status !== 'open') throw new Error('Can only top up open loans');
+    if (newPrincipal <= loan.principal_amount) throw new Error('New amount must be greater than current loan amount');
+    if (newPrincipal > 8000) throw new Error('Loan amount cannot exceed R8000');
+
+    const user = this.getUser(userId);
+    const now = new Date().toISOString();
+    const oldPrincipal = loan.principal_amount;
+    
+    // Calculate new loan terms
+    const calc = this.calculateLoan(newPrincipal, loan.repayment_plan_code);
+    
+    // Get current payments
+    const payments = this.db.prepare('SELECT * FROM payments WHERE loan_id = ? ORDER BY installment_number').all(loanId);
+    const paidAmount = payments.filter(p => p.is_paid).reduce((sum, p) => sum + p.amount_due, 0);
+    
+    // New outstanding = new total - already paid
+    const newOutstanding = Math.round((calc.total_repayable - paidAmount) * 100) / 100;
+    
+    // Update loan
+    this.db.prepare(`
+      UPDATE loans SET principal_amount = ?, interest_rate = ?, service_fee = ?, 
+        total_repayable = ?, installment_amount = ?, outstanding_balance = ?,
+        updated_at = ?, updated_by = ?
+      WHERE id = ?
+    `).run(newPrincipal, calc.interest_rate, calc.service_fee, calc.total_repayable, 
+           calc.installment_amount, newOutstanding, now, userId, loanId);
+    
+    // Update unpaid payment amounts to new installment amount
+    const newInstallment = calc.installment_amount;
+    payments.forEach(p => {
+      if (!p.is_paid) {
+        this.db.prepare('UPDATE payments SET amount_due = ? WHERE id = ?').run(newInstallment, p.id);
+      }
+    });
+    
+    this.createAuditLog('loan', loanId, 'top_up', userId, user.full_name, 
+      { principal_amount: oldPrincipal }, 
+      { principal_amount: newPrincipal, new_total: calc.total_repayable });
+    
+    return { 
+      message: 'Loan topped up successfully', 
+      old_principal: oldPrincipal,
+      new_principal: newPrincipal,
+      new_total: calc.total_repayable,
+      new_outstanding: newOutstanding
+    };
+  }
+
   recalculateLoanBalance(loanId) {
     const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
     if (!loan) return;
