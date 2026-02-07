@@ -507,6 +507,10 @@ class EasyMoneyDatabase {
     });
   }
 
+  findExistingCustomer(idNumber) {
+    return this.db.prepare('SELECT id FROM customers WHERE id_number = ? AND archived_at IS NULL').get(idNumber);
+  }
+
   createLoan(loanData, userId) {
     const customer = this.getCustomer(loanData.customer_id);
     if (!customer) {
