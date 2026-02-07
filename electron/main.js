@@ -7,8 +7,8 @@ let mainWindow;
 let updater;
 let database;
 
-// App version and GitHub repo - UPDATE THESE!
-const APP_VERSION = '1.0.0';
+// App version read from package.json and GitHub repo
+const APP_VERSION = require('./package.json').version;
 const GITHUB_REPO = 'TyronTsang/easymoney-desktop';
 
 // Get the correct path for resources in both dev and production
