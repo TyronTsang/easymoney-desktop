@@ -206,13 +206,55 @@ export default function AdminPanel() {
         toast.success('Backup created successfully!');
         fetchBackupStatus();
       } else {
-        toast.error('Backup failed');
+        toast.error(res.data.message || 'Backup failed');
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Backup failed');
-      setBackupResult({ success: false, message: err.response?.data?.detail || 'Backup failed' });
+      toast.error(err.response?.data?.detail || err.message || 'Backup failed');
+      setBackupResult({ success: false, message: err.response?.data?.detail || err.message || 'Backup failed' });
     } finally {
       setBackupLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (passwordForm.new_password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      await api().post('/users/change-password', {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password
+      });
+      toast.success('Password changed successfully');
+      setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleResetUserPassword = async () => {
+    if (!resetTarget || !resetNewPassword) return;
+    if (resetNewPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      await api().post('/admin/reset-password', { user_id: resetTarget.id, new_password: resetNewPassword });
+      toast.success(`Password reset for ${resetTarget.full_name}`);
+      setResetPasswordOpen(false);
+      setResetTarget(null);
+      setResetNewPassword('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Failed to reset password');
     }
   };
 
