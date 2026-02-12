@@ -470,6 +470,31 @@ export default function AdminPanel() {
               <Button onClick={handleSaveSettings} className="w-full bg-red-600 hover:bg-red-700" data-testid="save-settings-btn">
                 Save Settings
               </Button>
+              
+              {/* Password Change Section */}
+              <div className="pt-6 border-t border-border">
+                <h3 className="font-medium mb-4 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-red-500" />
+                  Change Your Password
+                </h3>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current_password">Current Password</Label>
+                    <Input id="current_password" type="password" value={passwordForm.current_password} onChange={(e) => setPasswordForm({...passwordForm, current_password: e.target.value})} className="bg-secondary" data-testid="current-password-input" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new_password">New Password</Label>
+                    <Input id="new_password" type="password" value={passwordForm.new_password} onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})} className="bg-secondary" data-testid="new-password-input" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm_password">Confirm New Password</Label>
+                    <Input id="confirm_password" type="password" value={passwordForm.confirm_password} onChange={(e) => setPasswordForm({...passwordForm, confirm_password: e.target.value})} className="bg-secondary" data-testid="confirm-password-input" required />
+                  </div>
+                  <Button type="submit" disabled={passwordLoading} className="w-full bg-red-600 hover:bg-red-700" data-testid="change-password-btn">
+                    {passwordLoading ? 'Changing...' : 'Change Password'}
+                  </Button>
+                </form>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
