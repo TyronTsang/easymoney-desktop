@@ -47,6 +47,12 @@ export default function AdminPanel() {
   const [backupLoading, setBackupLoading] = useState(false);
   const [backupResult, setBackupResult] = useState(null);
 
+  const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [resetTarget, setResetTarget] = useState(null);
+  const [resetNewPassword, setResetNewPassword] = useState('');
+
   const fetchData = useCallback(async () => {
     try {
       const [usersRes, settingsRes] = await Promise.all([
