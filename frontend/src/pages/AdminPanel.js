@@ -937,6 +937,23 @@ export default function AdminPanel() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent className="max-w-sm bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Reset Password</DialogTitle>
+            <DialogDescription>Set a new password for {resetTarget?.full_name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input type="password" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className="bg-secondary" data-testid="reset-new-password" placeholder="Min 6 characters" />
+            </div>
+            <Button onClick={handleResetUserPassword} className="w-full bg-red-600 hover:bg-red-700" data-testid="confirm-reset-pw-btn">Reset Password</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
