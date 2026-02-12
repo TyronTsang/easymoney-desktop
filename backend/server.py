@@ -1116,7 +1116,43 @@ async def find_existing_customer(data: FindCustomerRequest, user: dict = Depends
     if customer:
         return {"id": customer["id"]}
     return None
-@api_router.post("/loans/override-field")
+
+
+# ==================== PASSWORD CHANGE ====================
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@api_router.post("/users/change-password")
+async def change_password(data: ChangePasswordRequest, user: dict = Depends(get_current_user)):
+    """Change own password"""
+    db_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not bcrypt.checkpw(data.current_password.encode(), db_user["password_hash"].encode()):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    new_hash = bcrypt.hashpw(data.new_password.encode(), bcrypt.gensalt()).decode()
+    await db.users.update_one({"id": user["id"]}, {"$set": {"password_hash": new_hash, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    await create_audit_log("user", user["id"], "change_password", user["id"], user["full_name"])
+    return {"message": "Password changed successfully"}
+
+class AdminResetPasswordRequest(BaseModel):
+    user_id: str
+    new_password: str
+
+@api_router.post("/admin/reset-password")
+async def admin_reset_password(data: AdminResetPasswordRequest, user: dict = Depends(require_role(UserRole.ADMIN))):
+    """Admin resets another user's password"""
+    target = await db.users.find_one({"id": data.user_id}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_hash = bcrypt.hashpw(data.new_password.encode(), bcrypt.gensalt()).decode()
+    await db.users.update_one({"id": data.user_id}, {"$set": {"password_hash": new_hash, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    await create_audit_log("user", data.user_id, "admin_reset_password", user["id"], user["full_name"], after={"target_user": target["full_name"]})
+    return {"message": f"Password reset for {target['full_name']}"}
+
+
+
 async def override_loan_field(data: FieldOverrideRequest, user: dict = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN))):
     """Override locked loan field (Manager/Admin only with reason)"""
     loan = await db.loans.find_one({"id": data.loan_id}, {"_id": 0})
