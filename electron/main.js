@@ -337,6 +337,37 @@ ipcMain.handle('db:findExistingCustomer', async (event, idNumber) => {
   }
 });
 
+// --- Backup ---
+ipcMain.handle('db:createBackup', async (event, userId) => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory'],
+      title: 'Select Backup Folder'
+    });
+    if (result.canceled) return { success: false, message: 'Backup cancelled' };
+    return database.createBackup(result.filePaths[0], userId);
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+ipcMain.handle('db:getBackupStatus', async () => {
+  try { return database.getBackupStatus(); } catch { return { backup_folder_path: '', auto_backup_enabled: false, last_backup: null }; }
+});
+
+ipcMain.handle('db:saveBackupConfig', async (event, folderPath) => {
+  try { return database.saveBackupConfig(folderPath); } catch (error) { throw new Error(error.message); }
+});
+
+// --- Password Change ---
+ipcMain.handle('db:changePassword', async (event, userId, currentPassword, newPassword) => {
+  try { return database.changeUserPassword(userId, currentPassword, newPassword); } catch (error) { throw new Error(error.message); }
+});
+
+ipcMain.handle('db:adminResetPassword', async (event, targetUserId, newPassword, adminUserId) => {
+  try { return database.adminResetUserPassword(targetUserId, newPassword, adminUserId); } catch (error) { throw new Error(error.message); }
+});
+
 // ==================== DIALOG HANDLERS ====================
 
 ipcMain.handle('dialog:selectFolder', async (event, defaultPath) => {
