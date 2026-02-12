@@ -57,6 +57,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   topUpLoan: (loanId, newPrincipal, userId) => ipcRenderer.invoke('db:topUpLoan', loanId, newPrincipal, userId),
   findExistingCustomer: (idNumber) => ipcRenderer.invoke('db:findExistingCustomer', idNumber),
   
+  // Backup
+  createBackup: (userId) => ipcRenderer.invoke('db:createBackup', userId),
+  getBackupStatus: () => ipcRenderer.invoke('db:getBackupStatus'),
+  saveBackupConfig: (folderPath) => ipcRenderer.invoke('db:saveBackupConfig', folderPath),
+  
+  // Password
+  changePassword: (userId, currentPassword, newPassword) => ipcRenderer.invoke('db:changePassword', userId, currentPassword, newPassword),
+  adminResetPassword: (targetUserId, newPassword, adminUserId) => ipcRenderer.invoke('db:adminResetPassword', targetUserId, newPassword, adminUserId),
+  
   // Dialogs
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
   
