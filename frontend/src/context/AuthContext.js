@@ -36,7 +36,7 @@ function createElectronApiProxy(getUserId) {
     'POST:/users': (data) => electronAPI.createUser(data),
     'POST:/export': (data) => electronAPI.exportData(data.export_type, getUserId(), data.date_range),
     'POST:/archive': (data) => electronAPI.archiveEntity(data.entity_type, data.entity_id, data.reason, getUserId()),
-    'POST:/backup/create': () => ({ success: false, message: 'Use Electron export dialog' }),
+    'POST:/backup/create': () => electronAPI.createBackup(getUserId()),
     'POST:/settings/ad-config/test': () => ({ success: false, message: 'AD not available in offline mode' }),
     'POST:/loans/top-up': (data) => electronAPI.topUpLoan(data.loan_id, data.new_principal, getUserId()),
     'POST:/customers/find-existing': (data) => electronAPI.findExistingCustomer(data.id_number),
