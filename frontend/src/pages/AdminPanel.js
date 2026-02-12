@@ -399,9 +399,14 @@ export default function AdminPanel() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm" onClick={() => handleToggleUser(u.id)} data-testid={`toggle-user-${u.id}`}>
-                            {u.is_active ? 'Disable' : 'Enable'}
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleToggleUser(u.id)} data-testid={`toggle-user-${u.id}`}>
+                              {u.is_active ? 'Disable' : 'Enable'}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => { setResetTarget(u); setResetNewPassword(''); setResetPasswordOpen(true); }} className="text-blue-600 hover:text-blue-700" data-testid={`reset-pw-${u.id}`}>
+                              Reset PW
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
