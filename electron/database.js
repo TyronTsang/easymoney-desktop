@@ -1105,6 +1105,108 @@ class EasyMoneyDatabase {
     return { message: 'Customer updated by admin' };
   }
 
+  // ==================== BACKUP ====================
+  createBackup(folderPath, userId) {
+    const user = this.getUser(userId);
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10);
+    const time = now.toISOString().slice(11, 19).replace(/:/g, '-');
+    const branch = (user.branch || 'Unknown').replace(/\s/g, '_');
+    const filename = `Backup_${date}_${time}_${branch}.json`;
+    const filePath = path.join(folderPath, filename);
+
+    const customers = this.db.prepare('SELECT * FROM customers WHERE archived_at IS NULL').all();
+    const loans = this.db.prepare('SELECT * FROM loans WHERE archived_at IS NULL').all();
+    const payments = this.db.prepare('SELECT * FROM payments').all();
+    const auditLogs = this.db.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 500').all();
+    const settings = this.db.prepare('SELECT * FROM settings').all();
+
+    const backup = {
+      version: '1.0',
+      created_at: now.toISOString(),
+      created_by: user.full_name,
+      branch: user.branch,
+      data: { customers, loans, payments, settings },
+      audit_logs: auditLogs,
+      counts: {
+        customers: customers.length,
+        loans: loans.length,
+        payments: payments.length,
+        audit_logs: auditLogs.length
+      }
+    };
+
+    const jsonStr = JSON.stringify(backup, null, 2);
+    const fs = require('fs');
+    fs.writeFileSync(filePath, jsonStr, 'utf-8');
+
+    const stats = fs.statSync(filePath);
+    const sizeKB = Math.round(stats.size / 1024);
+    const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
+
+    this.createAuditLog('backup', 'system', 'create_backup', userId, user.full_name, null, { filename, size: sizeStr });
+
+    // Save last backup info
+    this.db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run(
+      'last_backup',
+      JSON.stringify({ created_at: now.toISOString(), filename, size: sizeStr, records: backup.counts })
+    );
+
+    return {
+      success: true,
+      message: 'Backup created successfully',
+      filename,
+      filePath,
+      backup_size: sizeStr,
+      records: backup.counts
+    };
+  }
+
+  getBackupStatus() {
+    const row = this.db.prepare("SELECT value FROM settings WHERE key = 'last_backup'").get();
+    const backupFolder = this.db.prepare("SELECT value FROM settings WHERE key = 'backup_folder_path'").get();
+    return {
+      backup_folder_path: backupFolder?.value || '',
+      auto_backup_enabled: false,
+      last_backup: row ? JSON.parse(row.value) : null
+    };
+  }
+
+  saveBackupConfig(folderPath) {
+    this.db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run('backup_folder_path', folderPath);
+    return { message: 'Backup config saved' };
+  }
+
+  // ==================== PASSWORD CHANGE ====================
+  changeUserPassword(userId, currentPassword, newPassword) {
+    const bcrypt = require('bcryptjs');
+    const user = this.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) throw new Error('User not found');
+
+    if (!bcrypt.compareSync(currentPassword, user.password_hash)) {
+      throw new Error('Current password is incorrect');
+    }
+
+    const newHash = bcrypt.hashSync(newPassword, 10);
+    this.db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(newHash, new Date().toISOString(), userId);
+
+    this.createAuditLog('user', userId, 'change_password', userId, user.full_name, null, null);
+    return { message: 'Password changed successfully' };
+  }
+
+  adminResetUserPassword(targetUserId, newPassword, adminUserId) {
+    const bcrypt = require('bcryptjs');
+    const target = this.db.prepare('SELECT * FROM users WHERE id = ?').get(targetUserId);
+    if (!target) throw new Error('User not found');
+    const admin = this.getUser(adminUserId);
+
+    const newHash = bcrypt.hashSync(newPassword, 10);
+    this.db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(newHash, new Date().toISOString(), targetUserId);
+
+    this.createAuditLog('user', targetUserId, 'admin_reset_password', adminUserId, admin.full_name, null, { target_user: target.full_name });
+    return { message: `Password reset for ${target.full_name}` };
+  }
+
   topUpLoan(loanId, newPrincipal, userId) {
     const loan = this.db.prepare('SELECT * FROM loans WHERE id = ?').get(loanId);
     if (!loan) throw new Error('Loan not found');
