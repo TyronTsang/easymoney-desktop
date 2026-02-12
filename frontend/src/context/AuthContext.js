@@ -24,7 +24,7 @@ function createElectronApiProxy(getUserId) {
       const stored = localStorage.getItem('electronUser');
       return stored ? JSON.parse(stored) : null;
     },
-    'GET:/backup/status': () => ({ backup_folder_path: '', auto_backup_enabled: false, last_backup: null }),
+    'GET:/backup/status': () => electronAPI.getBackupStatus(),
     'GET:/settings/ad-config': () => ({ enabled: false, ldap_available: false }),
     'POST:/master-password/setup': (data) => electronAPI.setupMasterPassword(data.password),
     'POST:/master-password/verify': (data) => electronAPI.verifyMasterPassword(data.password),
