@@ -42,7 +42,9 @@ function createElectronApiProxy(getUserId) {
     'POST:/customers/find-existing': (data) => electronAPI.findExistingCustomer(data.id_number),
     'PUT:/settings': (data) => electronAPI.updateSettings(data),
     'PUT:/settings/ad-config': () => ({ message: 'AD not available in offline mode' }),
-    'PUT:/backup/config': () => ({ message: 'Backup config saved' }),
+    'PUT:/backup/config': (data) => electronAPI.saveBackupConfig(data?.folder_path || data?.backup_folder_path || ''),
+    'POST:/users/change-password': (data) => electronAPI.changePassword(getUserId(), data.current_password, data.new_password),
+    'POST:/admin/reset-password': (data) => electronAPI.adminResetPassword(data.user_id, data.new_password, getUserId()),
   };
 
   // Dynamic route matching (for routes with parameters)
